@@ -11,6 +11,7 @@ import {
 import appCss from "../styles.css?url";
 import { I18nProvider } from "@/lib/i18n";
 import { ThemeProvider } from "@/lib/theme";
+import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
   return (
@@ -123,6 +124,7 @@ function RootComponent() {
       <ThemeProvider>
         <I18nProvider>
           <Outlet />
+          <Toaster />
         </I18nProvider>
       </ThemeProvider>
     </QueryClientProvider>
