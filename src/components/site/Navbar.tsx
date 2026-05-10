@@ -46,8 +46,8 @@ export function Navbar() {
           >
             {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </Button>
-          <Button className="rounded-full bg-gradient-primary text-primary-foreground hover:opacity-90 shadow-pin border-0">
-            {t("nav.cta")}
+          <Button asChild className="rounded-full bg-gradient-primary text-primary-foreground hover:opacity-90 shadow-pin border-0">
+            <Link to="/onboarding">{t("nav.cta")}</Link>
           </Button>
         </div>
       </div>
