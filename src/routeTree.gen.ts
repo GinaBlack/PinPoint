@@ -17,6 +17,7 @@ import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppSavedRouteImport } from './routes/app.saved'
 import { Route as AppBusinessRouteImport } from './routes/app.business'
 import { Route as AppAddressesRouteImport } from './routes/app.addresses'
+import { Route as AAliasRouteImport } from './routes/a.$alias'
 
 const SearchRoute = SearchRouteImport.update({
   id: '/search',
@@ -58,12 +59,18 @@ const AppAddressesRoute = AppAddressesRouteImport.update({
   path: '/addresses',
   getParentRoute: () => AppRoute,
 } as any)
+const AAliasRoute = AAliasRouteImport.update({
+  id: '/a/$alias',
+  path: '/a/$alias',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/onboarding': typeof OnboardingRoute
   '/search': typeof SearchRoute
+  '/a/$alias': typeof AAliasRoute
   '/app/addresses': typeof AppAddressesRoute
   '/app/business': typeof AppBusinessRoute
   '/app/saved': typeof AppSavedRoute
@@ -73,6 +80,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/onboarding': typeof OnboardingRoute
   '/search': typeof SearchRoute
+  '/a/$alias': typeof AAliasRoute
   '/app/addresses': typeof AppAddressesRoute
   '/app/business': typeof AppBusinessRoute
   '/app/saved': typeof AppSavedRoute
@@ -84,6 +92,7 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/onboarding': typeof OnboardingRoute
   '/search': typeof SearchRoute
+  '/a/$alias': typeof AAliasRoute
   '/app/addresses': typeof AppAddressesRoute
   '/app/business': typeof AppBusinessRoute
   '/app/saved': typeof AppSavedRoute
@@ -96,6 +105,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/onboarding'
     | '/search'
+    | '/a/$alias'
     | '/app/addresses'
     | '/app/business'
     | '/app/saved'
@@ -105,6 +115,7 @@ export interface FileRouteTypes {
     | '/'
     | '/onboarding'
     | '/search'
+    | '/a/$alias'
     | '/app/addresses'
     | '/app/business'
     | '/app/saved'
@@ -115,6 +126,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/onboarding'
     | '/search'
+    | '/a/$alias'
     | '/app/addresses'
     | '/app/business'
     | '/app/saved'
@@ -126,6 +138,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   OnboardingRoute: typeof OnboardingRoute
   SearchRoute: typeof SearchRoute
+  AAliasRoute: typeof AAliasRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -186,6 +199,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAddressesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/a/$alias': {
+      id: '/a/$alias'
+      path: '/a/$alias'
+      fullPath: '/a/$alias'
+      preLoaderRoute: typeof AAliasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -210,6 +230,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   OnboardingRoute: OnboardingRoute,
   SearchRoute: SearchRoute,
+  AAliasRoute: AAliasRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
