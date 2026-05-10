@@ -14,6 +14,7 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppSavedRouteImport } from './routes/app.saved'
+import { Route as AppBusinessRouteImport } from './routes/app.business'
 import { Route as AppAddressesRouteImport } from './routes/app.addresses'
 
 const OnboardingRoute = OnboardingRouteImport.update({
@@ -41,6 +42,11 @@ const AppSavedRoute = AppSavedRouteImport.update({
   path: '/saved',
   getParentRoute: () => AppRoute,
 } as any)
+const AppBusinessRoute = AppBusinessRouteImport.update({
+  id: '/business',
+  path: '/business',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAddressesRoute = AppAddressesRouteImport.update({
   id: '/addresses',
   path: '/addresses',
@@ -52,6 +58,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteWithChildren
   '/onboarding': typeof OnboardingRoute
   '/app/addresses': typeof AppAddressesRoute
+  '/app/business': typeof AppBusinessRoute
   '/app/saved': typeof AppSavedRoute
   '/app/': typeof AppIndexRoute
 }
@@ -59,6 +66,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/onboarding': typeof OnboardingRoute
   '/app/addresses': typeof AppAddressesRoute
+  '/app/business': typeof AppBusinessRoute
   '/app/saved': typeof AppSavedRoute
   '/app': typeof AppIndexRoute
 }
@@ -68,6 +76,7 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/onboarding': typeof OnboardingRoute
   '/app/addresses': typeof AppAddressesRoute
+  '/app/business': typeof AppBusinessRoute
   '/app/saved': typeof AppSavedRoute
   '/app/': typeof AppIndexRoute
 }
@@ -78,16 +87,24 @@ export interface FileRouteTypes {
     | '/app'
     | '/onboarding'
     | '/app/addresses'
+    | '/app/business'
     | '/app/saved'
     | '/app/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/onboarding' | '/app/addresses' | '/app/saved' | '/app'
+  to:
+    | '/'
+    | '/onboarding'
+    | '/app/addresses'
+    | '/app/business'
+    | '/app/saved'
+    | '/app'
   id:
     | '__root__'
     | '/'
     | '/app'
     | '/onboarding'
     | '/app/addresses'
+    | '/app/business'
     | '/app/saved'
     | '/app/'
   fileRoutesById: FileRoutesById
@@ -135,6 +152,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSavedRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/business': {
+      id: '/app/business'
+      path: '/business'
+      fullPath: '/app/business'
+      preLoaderRoute: typeof AppBusinessRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/addresses': {
       id: '/app/addresses'
       path: '/addresses'
@@ -147,12 +171,14 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppAddressesRoute: typeof AppAddressesRoute
+  AppBusinessRoute: typeof AppBusinessRoute
   AppSavedRoute: typeof AppSavedRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppAddressesRoute: AppAddressesRoute,
+  AppBusinessRoute: AppBusinessRoute,
   AppSavedRoute: AppSavedRoute,
   AppIndexRoute: AppIndexRoute,
 }
