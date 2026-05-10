@@ -1,26 +1,34 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Navbar } from "@/components/site/Navbar";
+import { Hero } from "@/components/site/Hero";
+import { Problem, HowItWorks, SavedLinks, WhyDifferent, Pricing, FinalCTA, Footer } from "@/components/site/Sections";
 
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "PinPoint — A simple address for everyone in Cameroon" },
+      { name: "description", content: "Turn your phone into a precise, shareable digital address. Drop a pin, share a link, get deliveries to your exact door — no street names needed." },
+      { property: "og:title", content: "PinPoint — A simple address for everyone in Cameroon" },
+      { property: "og:description", content: "Drop a pin, share a link. Deliveries arrive exactly where you are." },
+    ],
+  }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. For sites with multiple pages (About, Services, Contact, etc.),
-// create separate route files (about.tsx, services.tsx, contact.tsx) — don't put all pages in this file.
-function PlaceholderIndex() {
+function Index() {
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div className="min-h-screen bg-background text-foreground antialiased selection:bg-primary/20">
+      <Navbar />
+      <main>
+        <Hero />
+        <Problem />
+        <HowItWorks />
+        <SavedLinks />
+        <WhyDifferent />
+        <Pricing />
+        <FinalCTA />
+      </main>
+      <Footer />
     </div>
   );
-}
-
-function Index() {
-  return <PlaceholderIndex />;
 }
