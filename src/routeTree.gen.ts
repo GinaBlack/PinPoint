@@ -13,6 +13,7 @@ import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppSavedRouteImport } from './routes/app.saved'
 import { Route as AppAddressesRouteImport } from './routes/app.addresses'
 
 const OnboardingRoute = OnboardingRouteImport.update({
@@ -35,6 +36,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSavedRoute = AppSavedRouteImport.update({
+  id: '/saved',
+  path: '/saved',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAddressesRoute = AppAddressesRouteImport.update({
   id: '/addresses',
   path: '/addresses',
@@ -46,12 +52,14 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteWithChildren
   '/onboarding': typeof OnboardingRoute
   '/app/addresses': typeof AppAddressesRoute
+  '/app/saved': typeof AppSavedRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/onboarding': typeof OnboardingRoute
   '/app/addresses': typeof AppAddressesRoute
+  '/app/saved': typeof AppSavedRoute
   '/app': typeof AppIndexRoute
 }
 export interface FileRoutesById {
@@ -60,14 +68,28 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/onboarding': typeof OnboardingRoute
   '/app/addresses': typeof AppAddressesRoute
+  '/app/saved': typeof AppSavedRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/app' | '/onboarding' | '/app/addresses' | '/app/'
+  fullPaths:
+    | '/'
+    | '/app'
+    | '/onboarding'
+    | '/app/addresses'
+    | '/app/saved'
+    | '/app/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/onboarding' | '/app/addresses' | '/app'
-  id: '__root__' | '/' | '/app' | '/onboarding' | '/app/addresses' | '/app/'
+  to: '/' | '/onboarding' | '/app/addresses' | '/app/saved' | '/app'
+  id:
+    | '__root__'
+    | '/'
+    | '/app'
+    | '/onboarding'
+    | '/app/addresses'
+    | '/app/saved'
+    | '/app/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -106,6 +128,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/saved': {
+      id: '/app/saved'
+      path: '/saved'
+      fullPath: '/app/saved'
+      preLoaderRoute: typeof AppSavedRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/addresses': {
       id: '/app/addresses'
       path: '/addresses'
@@ -118,11 +147,13 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppAddressesRoute: typeof AppAddressesRoute
+  AppSavedRoute: typeof AppSavedRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppAddressesRoute: AppAddressesRoute,
+  AppSavedRoute: AppSavedRoute,
   AppIndexRoute: AppIndexRoute,
 }
 
