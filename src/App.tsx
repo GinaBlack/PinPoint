@@ -20,6 +20,7 @@ import ProfilePage from "./pages/ProfilePage";
 import MessagePage from "./pages/MessagePage";
 import SearchPage from "./pages/SearchPage";
 import Onboarding from "./pages/OnboardingPage";
+import AddAddressPage from "./pages/AddAddressPage";
 
 import { I18nProvider } from "./lib/i18n";  
 
@@ -46,6 +47,7 @@ const AppRoutes = () => (
       <Route path="saved" element={<SavedLinksPage />} />
       <Route path="business" element={<BusinessPage />} />
       <Route path="search" element={<SearchPage />} />
+      <Route path="add-address" element={<AddAddressPage />} />
     </Route>
     <Route path="/a/:alias" element={<AliasPage />} />
     <Route path="/m/:linkId" element={<MessagePage />} />

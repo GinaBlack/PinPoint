@@ -13,7 +13,7 @@ export type Address = {
   lat: number;
   lng: number;
   notes?: string;
-  photo?: string;         // data URL
+  photos?: string[];      // Array to store multiple photos (e.g., data URLs or URLs)
   isBusiness?: boolean;
   alias?: string;         // public alias slug, unique-ish
   isPublic?: boolean;

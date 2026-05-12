@@ -24,7 +24,7 @@ const OveviewPage = () => {
           <h1 className="font-display text-4xl font-semibold mt-1">{t("Your addresses", "Vos adresses")}</h1>
         </div>
         <Button asChild className="rounded-full bg-gradient-primary text-primary-foreground hover:opacity-90 shadow-pin border-0">
-          <NavLink to="/onboarding"><Plus className="w-4 h-4 mr-1.5" /> {t("Add new", "Ajouter")}</NavLink>
+          <NavLink to="/app/addresses"><Plus className="w-4 h-4 mr-1.5" /> {t("Add new", "Ajouter")}</NavLink>
         </Button>
       </header>
 

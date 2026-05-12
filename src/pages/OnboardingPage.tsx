@@ -1,6 +1,6 @@
 import { useNavigate, Link, Navigate } from "react-router-dom";
 import { useState } from "react";
-import { ArrowLeft, ArrowRight, Check, MapPin, Sparkles, Link2, MessageCircle, Lock } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, MapPin, Sparkles, Link2, MessageCircle, Lock, ImagePlus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -29,6 +29,36 @@ function Onboarding() {
   const [notes, setNotes] = useState("");
   const [linkType, setLinkType] = useState<LinkType>("alias");
   const [alias, setAlias] = useState("");
+  const [photoUrls, setPhotoUrls] = useState<string[]>([]); // State for photo URLs
+
+  const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>, index: number) => {
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      // In a real app, you'd handle file reading and uploading here.
+      // For this example, we'll simulate by just storing a placeholder or the file name.
+      // If using data URLs:
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const newUrls = [...photoUrls];
+        newUrls[index] = reader.result as string;
+        setPhotoUrls(newUrls);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removePhoto = (index: number) => {
+    const newUrls = [...photoUrls];
+    newUrls.splice(index, 1);
+    setPhotoUrls(newUrls);
+  };
+
+  const addPhotoField = () => {
+    if (photoUrls.length < 2) {
+      setPhotoUrls([...photoUrls, ""]);
+    }
+  };
 
   const finish = () => {
     const cleanAlias = alias.trim().replace(/[^a-zA-Z0-9_-]/g, "");
@@ -39,6 +69,7 @@ function Onboarding() {
       lat: pos.lat,
       lng: pos.lng,
       notes,
+      photos: photoUrls.length > 0 ? photoUrls : undefined, // Pass photos array
       alias: linkType === "alias" ? cleanAlias || undefined : undefined,
       isPublic: false,
     });
@@ -67,7 +98,7 @@ function Onboarding() {
 
   const steps = [
     t("Locate", "Localiser"),
-    t("Name it", "Nommer"),
+    t("Name & Describe", "Nommer & Décrire"),
     t("Choose link", "Type de lien"),
     t("Review", "Confirmer"),
   ];
@@ -131,18 +162,18 @@ function Onboarding() {
               {t("Just for you — like “Home” or “Shop in Buea”.", "Pour vous — comme « Maison » ou « Boutique à Buea ».")}
             </p>
             <div>
-                        <div className="grid grid-cols-3 gap-2">
-                          {(["personal", "homeaddress", "business"] as AddressType[]).map((type) => (
-                            <Button
-                              key={type}
-                              variant={addressType === type ? "default" : "outline"}
-                              onClick={() => setAddressType(type)}
-                              className="capitalize rounded-xl text-xs h-9"
-                            >
-                              {t(type, type === "personal" ? "Personnel" : type === "homeaddress" ? "Maison" : "Entreprise")}
-                            </Button>
-                          ))}
-                        </div>
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                {(["personal", "homeaddress", "business"] as AddressType[]).map((type) => (
+                  <Button
+                    key={type}
+                    variant={addressType === type ? "default" : "outline"}
+                    onClick={() => setAddressType(type)}
+                    className="capitalize rounded-xl text-xs h-9"
+                  >
+                    {t(type, type === "personal" ? "Personal" : type === "homeaddress" ? "Home" : "Business")}
+                  </Button>
+                ))}
+              </div>
               {addressType === "business" && (
                 <div>
                   <label className="text-sm font-medium">{t("Business Name", "Nom de l'entreprise")}</label>
@@ -159,6 +190,60 @@ function Onboarding() {
                 <label className="text-sm font-medium">{t("Label", "Étiquette")}</label>
                 <Input value={label} onChange={(e) => setLabel(e.target.value)} className="mt-1.5 h-11" />
               </div>
+
+              {/* Photo Uploads */}
+              <div className="mt-4">
+                <label className="text-sm font-medium">{t("Front Gate Photos (Max 2)", "Photos de la porte d'entrée (Max 2)")}</label>
+                <div className="flex flex-wrap gap-3 mt-1.5">
+                  {photoUrls.map((url, index) => (
+                    <div key={index} className="relative w-24 h-24 rounded-lg overflow-hidden border border-border flex items-center justify-center bg-muted group">
+                      {url ? (
+                        <>
+                          <img src={url} alt={`Front gate photo ${index + 1}`} className="w-full h-full object-cover"/>
+                          <button 
+                            onClick={() => removePhoto(index)}
+                            className="absolute top-1 right-1 bg-black bg-opacity-50 rounded-full p-1 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
+                            <X className="w-3 h-3 text-white" />
+                          </button>
+                        </>
+                      ) : (
+                        <label htmlFor={`photo-upload-${index}`} className="cursor-pointer flex items-center justify-center w-full h-full">
+                          <ImagePlus className="w-6 h-6 text-muted-foreground" />
+                          <input 
+                            id={`photo-upload-${index}`}
+                            type="file" 
+                            accept="image/*" 
+                            onChange={(e) => handlePhotoUpload(e, index)} 
+                            className="hidden" 
+                          />
+                        </label>
+                      )}
+                    </div>
+                  ))}
+                  {photoUrls.length < 2 && (
+                    <label htmlFor="photo-upload-new" className="w-24 h-24 rounded-lg border border-dashed border-border flex items-center justify-center cursor-pointer bg-muted">
+                      <ImagePlus className="w-6 h-6 text-muted-foreground" />
+                      <input 
+                        id="photo-upload-new"
+                        type="file" 
+                        accept="image/*" 
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              setPhotoUrls([...photoUrls, reader.result as string]);
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }} 
+                        className="hidden" 
+                      />
+                    </label>
+                  )}
+                </div>
+              </div>
+
               <div>
                 <label className="text-sm font-medium">{t("Notes for visitors (optional)", "Notes pour les visiteurs (optionnel)")}</label>
                 <Textarea
@@ -235,6 +320,16 @@ function Onboarding() {
                 <p className="text-xs text-muted-foreground">{t("Address", "Adresse")}</p>
                 <p className="font-display text-xl font-semibold mt-0.5">{label}</p>
                 {notes && <p className="text-sm text-muted-foreground mt-2">{notes}</p>}
+                {photoUrls.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-border">
+                    <p className="text-xs text-muted-foreground">{t("Photos", "Photos")}</p>
+                    <div className="flex gap-2 mt-1">
+                      {photoUrls.map((url, index) => (
+                        <img key={index} src={url} alt={`Front gate photo ${index + 1}`} className="w-16 h-16 object-cover rounded-lg border border-border"/>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div className="mt-4 pt-4 border-t border-border">
                   <p className="text-xs text-muted-foreground">{t("Share via", "Partage via")}</p>
                   <p className="text-sm font-medium mt-0.5 capitalize">{linkType}</p>
