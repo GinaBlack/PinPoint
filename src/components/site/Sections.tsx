@@ -1,6 +1,6 @@
 import { Check, MapPin, Link2, Share2, MessageCircle, Globe2, Lock, Layers, Search, Sparkles, ArrowRight, WifiOff, Sun } from "lucide-react";
 import { useState } from "react";
-import { Link } from "@tanstack/react-router";
+import {NavLink} from "../NavLink"
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 
@@ -278,7 +278,7 @@ export function FinalCTA() {
         </h2>
         <p className="relative mt-6 text-primary-foreground/80 max-w-xl mx-auto text-lg">{t("cta.sub")}</p>
         <Button asChild size="lg" className="relative mt-10 rounded-full bg-background text-foreground hover:bg-background/90 px-8 h-12 text-base">
-          <Link to="/onboarding">{t("cta.btn")} <ArrowRight className="ml-1.5 w-4 h-4" /></Link>
+          <NavLink to="/onboarding">{t("cta.btn")} <ArrowRight className="ml-1.5 w-4 h-4" /></NavLink>
         </Button>
       </div>
     </section>

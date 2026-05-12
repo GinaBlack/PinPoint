@@ -3,9 +3,13 @@ import { useEffect, useState } from "react";
 export type LinkType = "anonymous" | "alias" | "message";
 export type LinkStatus = "active" | "disabled";
 
+export type AddressType = "personal" | "homeaddress" | "business";
+
 export type Address = {
   id: string;
   label: string;          // "Home", "Shop", "Maman Bamenda"
+  type: AddressType;
+  businessName?: string;
   lat: number;
   lng: number;
   notes?: string;
@@ -14,6 +18,12 @@ export type Address = {
   alias?: string;         // public alias slug, unique-ish
   isPublic?: boolean;
   createdAt: number;
+};
+
+export const PLAN_LIMITS = {
+  basic: { addresses: 3, links: 5 },
+  pro: { addresses: 50, links: 100 },
+  business: { addresses: Infinity, links: Infinity },
 };
 
 export type ShareLink = {
@@ -37,12 +47,82 @@ export type SavedLink = {
   disabledReason?: string;
 };
 
+export type Plan = "basic" | "pro" | "business";
+
+export type Notification = {
+  id: string;
+  title: string;
+  message: string;
+  type: "info" | "success" | "warning" | "error";
+  read: boolean;
+  createdAt: number;
+};
+
+export type User = {
+  id: string;
+  email: string;
+  name: string;
+  role: "user" | "admin";
+  plan: Plan;
+  bio?: string;
+  avatar?: string;
+  createdAt: number;
+};
+
+export type ChatMessage = {
+  id: string;
+  linkId: string;
+  sender: "agent" | "user";
+  text: string;
+  timestamp: number;
+};
+
 const KEYS = {
   addresses: "pp.addresses",
   links: "pp.links",
   saved: "pp.savedLinks",
   onboarded: "pp.onboarded",
+  user: "pp.user",
+  users: "pp.users", // For mock registration
+  messages: "pp.messages",
+  notifications: "pp.notifications",
 };
+
+function seedNotifications(): Notification[] {
+  return [
+    {
+      id: uid(),
+      title: "Welcome to PinPoint!",
+      message: "Thank you for joining our platform. Start by dropping your first pin.",
+      type: "success",
+      read: false,
+      createdAt: Date.now() - 1000 * 3600,
+    },
+    {
+      id: uid(),
+      title: "New Feature: Message Links",
+      message: "You can now chat directly with delivery agents using special message links.",
+      type: "info",
+      read: true,
+      createdAt: Date.now() - 1000 * 3600 * 24,
+    }
+  ];
+}
+
+function seedUsers() {
+  const users = read<{ email: string; password: string; user: User }[]>(KEYS.users, []);
+  if (users.length === 0) {
+    const demoUser: User = {
+      id: "demo-user",
+      email: "demo@pinpoint.app",
+      name: "Demo User",
+      role: "user",
+      plan: "basic",
+      createdAt: Date.now(),
+    };
+    write(KEYS.users, [{ email: "demo@pinpoint.app", password: "password123", user: demoUser }]);
+  }
+}
 
 function read<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
@@ -67,17 +147,26 @@ export function uid() {
 /* ---------- React hook ---------- */
 
 export function useStore() {
-  const [addresses, setAddresses] = useState<Address[]>([]);
-  const [links, setLinks] = useState<ShareLink[]>([]);
-  const [saved, setSaved] = useState<SavedLink[]>([]);
+  seedUsers();
+  const [addresses, setAddresses] = useState<Address[]>(() => read<Address[]>(KEYS.addresses, []));
+  const [links, setLinks] = useState<ShareLink[]>(() => read<ShareLink[]>(KEYS.links, []));
+  const [saved, setSaved] = useState<SavedLink[]>(() => read<SavedLink[]>(KEYS.saved, seedSaved()));
+  const [user, setUser] = useState<User | null>(() => read<User | null>(KEYS.user, null));
+  const [onboarded, setOnboardedState] = useState<boolean>(() => read<boolean>(KEYS.onboarded, false));
+  const [messages, setMessages] = useState<ChatMessage[]>(() => read<ChatMessage[]>(KEYS.messages, []));
+  const [notifications, setNotifications] = useState<Notification[]>(() => read<Notification[]>(KEYS.notifications, seedNotifications()));
 
   useEffect(() => {
     const sync = () => {
       setAddresses(read<Address[]>(KEYS.addresses, []));
       setLinks(read<ShareLink[]>(KEYS.links, []));
       setSaved(read<SavedLink[]>(KEYS.saved, seedSaved()));
+      setUser(read<User | null>(KEYS.user, null));
+      setOnboardedState(read<boolean>(KEYS.onboarded, false));
+      setMessages(read<ChatMessage[]>(KEYS.messages, []));
+      setNotifications(read<Notification[]>(KEYS.notifications, seedNotifications()));
     };
-    sync();
+    // sync(); // No longer needed as first sync, only for events
     const onStore = () => sync();
     window.addEventListener("pp:store", onStore);
     window.addEventListener("storage", onStore);
@@ -91,12 +180,93 @@ export function useStore() {
     addresses,
     links,
     saved,
+    user,
+    onboarded,
+    messages,
+    notifications,
 
-    addAddress(a: Omit<Address, "id" | "createdAt">) {
-      const next: Address = { ...a, id: uid(), createdAt: Date.now() };
-      const all = [...read<Address[]>(KEYS.addresses, []), next];
-      write(KEYS.addresses, all);
+    markNotificationAsRead(id: string) {
+      const all = read<Notification[]>(KEYS.notifications, seedNotifications()).map(n => 
+        n.id === id ? { ...n, read: true } : n
+      );
+      write(KEYS.notifications, all);
+    },
+
+    updateUserPlan(plan: Plan) {
+      const currentUser = read<User | null>(KEYS.user, null);
+      if (currentUser) {
+        const updated = { ...currentUser, plan };
+        write(KEYS.user, updated);
+        // Also update in users list
+        const users = read<{ email: string; password: string; user: User }[]>(KEYS.users, []);
+        const updatedUsers = users.map(u => u.user.id === updated.id ? { ...u, user: updated } : u);
+        write(KEYS.users, updatedUsers);
+      }
+    },
+
+    updateProfile(patch: Partial<Pick<User, "name" | "bio" | "avatar">>) {
+      const currentUser = read<User | null>(KEYS.user, null);
+      if (currentUser) {
+        const updated = { ...currentUser, ...patch };
+        write(KEYS.user, updated);
+        // Also update in users list
+        const users = read<{ email: string; password: string; user: User }[]>(KEYS.users, []);
+        const updatedUsers = users.map(u => u.user.id === updated.id ? { ...u, user: updated } : u);
+        write(KEYS.users, updatedUsers);
+      }
+    },
+
+    addMessage(msg: Omit<ChatMessage, "id" | "timestamp">) {
+      const next: ChatMessage = { ...msg, id: uid(), timestamp: Date.now() };
+      const all = [...read<ChatMessage[]>(KEYS.messages, []), next];
+      write(KEYS.messages, all);
       return next;
+    },
+
+    login(email: string, password: string): { success: boolean; error?: string } {
+      const users = read<{ email: string; password: string; user: User }[]>(KEYS.users, []);
+      const found = users.find((u) => u.email === email && u.password === password);
+      if (found) {
+        write(KEYS.user, found.user);
+        return { success: true };
+      }
+      return { success: false, error: "Invalid email or password" };
+    },
+
+    register(name: string, email: string, password: string): { success: boolean; error?: string } {
+      const users = read<{ email: string; password: string; user: User }[]>(KEYS.users, []);
+      if (users.find((u) => u.email === email)) {
+        return { success: false, error: "Email already exists" };
+      }
+      const newUser: User = {
+        id: uid(),
+        email,
+        name,
+        role: email.endsWith("@admin.com") ? "admin" : "user",
+        plan: "basic",
+        createdAt: Date.now(),
+      };
+      write(KEYS.users, [...users, { email, password, user: newUser }]);
+      write(KEYS.user, newUser);
+      return { success: true };
+    },
+
+    logout() {
+      write(KEYS.user, null);
+    },
+
+    addAddress(a: Omit<Address, "id" | "createdAt">): { success: boolean; data?: Address; error?: string } {
+      const all = read<Address[]>(KEYS.addresses, []);
+      const currentUser = read<User | null>(KEYS.user, null);
+      const limit = PLAN_LIMITS[currentUser?.plan || "basic"].addresses;
+
+      if (all.length >= limit) {
+        return { success: false, error: `Limit reached: Your plan allows only ${limit} addresses.` };
+      }
+
+      const next: Address = { ...a, id: uid(), createdAt: Date.now() };
+      write(KEYS.addresses, [...all, next]);
+      return { success: true, data: next };
     },
     updateAddress(id: string, patch: Partial<Address>) {
       const all = read<Address[]>(KEYS.addresses, []).map((a) =>
@@ -116,11 +286,18 @@ export function useStore() {
       write(KEYS.links, updatedLinks);
     },
 
-    addLink(l: Omit<ShareLink, "id" | "createdAt">) {
+    addLink(l: Omit<ShareLink, "id" | "createdAt">): { success: boolean; data?: ShareLink; error?: string } {
+      const all = read<ShareLink[]>(KEYS.links, []);
+      const currentUser = read<User | null>(KEYS.user, null);
+      const limit = PLAN_LIMITS[currentUser?.plan || "basic"].links;
+
+      if (all.length >= limit) {
+        return { success: false, error: `Limit reached: Your plan allows only ${limit} links.` };
+      }
+
       const next: ShareLink = { ...l, id: uid(), createdAt: Date.now() };
-      const all = [...read<ShareLink[]>(KEYS.links, []), next];
-      write(KEYS.links, all);
-      return next;
+      write(KEYS.links, [...all, next]);
+      return { success: true, data: next };
     },
     deleteLink(id: string) {
       write(

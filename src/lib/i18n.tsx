@@ -10,6 +10,9 @@ const en: Dict = {
   "nav.pricing": "Pricing",
   "nav.signin": "Sign in",
   "nav.cta": "Get PinPoint",
+    "nav.login": "Login",
+  "nav.register": "Register",
+
 
   "hero.eyebrow": "Made for Cameroon",
   "hero.title1": "An address that",
@@ -110,6 +113,8 @@ const fr: Dict = {
   "nav.pricing": "Tarifs",
   "nav.signin": "Connexion",
   "nav.cta": "Obtenir PinPoint",
+  "nav.login": "Connexion",
+  "nav.register": "S'inscrire",
 
   "hero.eyebrow": "Conçu pour le Cameroun",
   "hero.title1": "Une adresse qui",

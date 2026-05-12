@@ -1,6 +1,6 @@
 import { ArrowRight, Sparkles } from "lucide-react";
-import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
+import {NavLink} from "../NavLink"
 import { useI18n } from "@/lib/i18n";
 import { MapVisual } from "./MapVisual";
 
@@ -25,7 +25,7 @@ export function Hero() {
           </p>
           <div className="mt-9 flex flex-wrap gap-3">
             <Button asChild size="lg" className="rounded-full bg-gradient-primary text-primary-foreground hover:opacity-90 shadow-pin border-0 h-12 px-6 text-base">
-              <Link to="/onboarding">{t("hero.cta1")} <ArrowRight className="ml-1.5 w-4 h-4" /></Link>
+              <NavLink to="/onboarding">{t("hero.cta1")} <ArrowRight className="ml-1.5 w-4 h-4" /></NavLink>
             </Button>
             <Button size="lg" variant="outline" className="rounded-full h-12 px-6 text-base bg-card/60 backdrop-blur" asChild>
               <a href="#how">{t("hero.cta2")}</a>

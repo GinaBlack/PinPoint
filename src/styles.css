@@ -1,6 +1,5 @@
-@import "tailwindcss" source(none);
+@import "tailwindcss";
 @source "../src";
-@import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -25,7 +24,7 @@
  * 2. Register it in @theme inline as --color-<name>: var(--<name>)
  */
 
-@theme inline {
+@theme {
   --font-display: var(--font-display);
   --font-sans: var(--font-sans);
   --radius-sm: calc(var(--radius) - 4px);
