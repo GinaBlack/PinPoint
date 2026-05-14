@@ -1,17 +1,20 @@
 import { useState } from "react";
-import { User, Mail, Shield, Calendar, Edit2, Camera, MapPin, Globe } from "lucide-react";
+import { User, Mail, Shield, Calendar, Edit2, Camera, MapPin, Globe, Moon, Sun, Languages } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useStore } from "@/lib/store";
 import { useI18n } from "@/lib/i18n";
+import { useTheme } from "@/lib/theme";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Switch } from "@/components/ui/switch";
 
 export default function ProfilePage() {
-  const { lang } = useI18n();
+  const { lang, setLang } = useI18n();
   const t = (en: string, fr: string) => (lang === "fr" ? fr : en);
   const { user, updateProfile, addresses } = useStore();
+  const { theme, toggle: toggleTheme } = useTheme();
 
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(user?.name || "");
@@ -32,7 +35,7 @@ export default function ProfilePage() {
     .toUpperCase();
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="max-w-4xl mx-auto space-y-8 pb-20">
       <header className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-4xl font-semibold">{t("My Profile", "Mon Profil")}</h1>
@@ -143,6 +146,57 @@ export default function ProfilePage() {
             </div>
           </div>
 
+          {/* Settings Section */}
+          <div className="rounded-3xl border border-border bg-card p-8 shadow-sm">
+            <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+              <Shield className="w-5 h-5 text-primary" />
+              {t("App Settings", "Paramètres de l'application")}
+            </h3>
+            
+            <div className="space-y-4">
+              {/* Theme Toggle */}
+              <div className="flex items-center justify-between p-4 rounded-2xl bg-muted/30 border border-border/40">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-background flex items-center justify-center border border-border/50 shadow-sm">
+                    {theme === "dark" ? <Moon className="w-5 h-5 text-blue-400" /> : <Sun className="w-5 h-5 text-amber-500" />}
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">{t("Dark Mode", "Mode sombre")}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{t("Switch between light and dark appearance.", "Basculez entre l'apparence claire et sombre.")}</p>
+                  </div>
+                </div>
+                <Switch checked={theme === "dark"} onCheckedChange={toggleTheme} />
+              </div>
+
+              {/* Language Toggle */}
+              <div className="flex items-center justify-between p-4 rounded-2xl bg-muted/30 border border-border/40">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-background flex items-center justify-center border border-border/50 shadow-sm">
+                    <Languages className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">{t("Language", "Langue")}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{lang === "en" ? "English (selected)" : "Français (sélectionné)"}</p>
+                  </div>
+                </div>
+                <div className="flex bg-background border border-border/50 rounded-xl p-1 shadow-sm">
+                  <button 
+                    onClick={() => setLang("en")}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${lang === "en" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    EN
+                  </button>
+                  <button 
+                    onClick={() => setLang("fr")}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${lang === "fr" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    FR
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="rounded-3xl border border-border bg-card p-8 shadow-sm">
             <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
               <Globe className="w-5 h-5 text-primary" />
@@ -156,9 +210,7 @@ export default function ProfilePage() {
                 <p className="font-medium text-sm">{t("Show profile on share pages", "Afficher le profil sur les pages de partage")}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{t("Allows people to see your name and bio.", "Permet aux gens de voir votre nom et votre biographie.")}</p>
               </div>
-              <div className="w-10 h-6 bg-primary rounded-full relative">
-                <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full" />
-              </div>
+              <Switch checked={true} />
             </div>
           </div>
         </main>

@@ -21,6 +21,9 @@ import MessagePage from "./pages/MessagePage";
 import SearchPage from "./pages/SearchPage";
 import Onboarding from "./pages/OnboardingPage";
 import AddAddressPage from "./pages/AddAddressPage";
+import SupportPage from "./pages/SupportPage";
+import HelpPage from "./pages/HelpPage";
+import ReferralPage from "./pages/ReferralPage";
 
 import { I18nProvider } from "./lib/i18n";  
 
@@ -48,6 +51,9 @@ const AppRoutes = () => (
       <Route path="business" element={<BusinessPage />} />
       <Route path="search" element={<SearchPage />} />
       <Route path="add-address" element={<AddAddressPage />} />
+      <Route path="support" element={<SupportPage />} />
+      <Route path="help" element={<HelpPage />} />
+      <Route path="referral" element={<ReferralPage />} />
     </Route>
     <Route path="/a/:alias" element={<AliasPage />} />
     <Route path="/m/:linkId" element={<MessagePage />} />

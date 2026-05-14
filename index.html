@@ -2,40 +2,63 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- TODO: Set the document title to the name of your application -->
-    <title>PinPoint</title>
-    <meta name="description" content="Digital addresses for Cameroon" />
-    <meta name="author" content="PinPoint" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>PinPoint – Drop a pin. Share exactly. | Digital Addresses for Cameroon</title>
+    <meta name="description" content="PinPoint turns every smartphone into a precise, shareable digital address. No more vague landmarks – just drop a pin, generate a link, and get door‑to‑door deliveries anywhere in Cameroon." />
+    <meta name="keywords" content="digital address, Cameroon, delivery, GPS, address sharing, PinPoint, location, map, Buea, Douala, Yaoundé, e‑commerce" />
+    <meta name="author" content="PinPoint Team" />
+    <meta name="theme-color" content="#0055FF" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="PinPoint" />
 
-    <!-- OpenStreetMap Leaflet CDN -->
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/logo.png" sizes="96x96" />
+    <link rel="icon" type="image/png" href="/logo.png"  />
+    <link rel="shortcut icon" href="/logo.png" sizes="180x180"/>
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- Open Graph / Social -->
+    <meta property="og:title" content="PinPoint – Digital Addresses for Cameroon" />
+    <meta property="og:description" content="Share your exact location with a simple link. No street names needed. Perfect for deliveries, e‑commerce, and everyday life." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://pinpoint.app" />
+    <meta property="og:image" content="https://pinpoint.app/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content="en_CM" />
+    <meta property="og:site_name" content="PinPoint" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="PinPoint – Digital Addresses for Cameroon" />
+    <meta name="twitter:description" content="Drop a pin. Share exactly. No more landmark directions." />
+    <meta name="twitter:image" content="./public/logo.png" />
+    <meta name="twitter:site" content="@pinpointcm" />
+
+    <!-- OpenStreetMap Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
+    <!-- Map tile styling for light/dark mode -->
     <style>
       .leaflet-container {
         background: transparent !important;
       }
+      /* Default (light) tiles */
       .leaflet-tile-pane {
-        filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+        filter: none;
       }
+      /* Dark mode tiles: invert, rotate hue, adjust brightness */
       .dark .leaflet-tile-pane {
         filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
       }
+      /* Ensure light mode explicitly resets filter if a class is applied */
       .light .leaflet-tile-pane {
         filter: none;
       }
     </style>
-
-
-    <!-- TODO: Update og:title to match your application name -->
-    <meta property="og:title" content="PinPoint" />
-    <meta property="og:description" content="Digital address generating app" />
-    <meta property="og:type" content="website" />
-    <meta property="og:image" content="./public/logo.png" />
-
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:image" content="./public/logo.png" />
   </head>
 
   <body>
@@ -43,3 +66,4 @@
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
+```

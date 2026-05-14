@@ -209,30 +209,13 @@ function PlanCard({ p }: { p: Plan }) {
 
 export function Pricing() {
   const { t } = useI18n();
-  const [tab, setTab] = useState<"personal" | "home" | "biz">("personal");
 
-  const plans: Record<typeof tab, Plan[]> = {
-    personal: [
-      { name: t("p.basic"), price: "2,500", cadence: `FCFA${t("pricing.month")}`, features: [t("personal.b1"), t("personal.b2")] },
-      { name: t("p.standard"), price: "4,000", cadence: `FCFA${t("pricing.month")}`, features: [t("personal.s1"), t("personal.s2"), t("personal.s3")], popular: true },
-      { name: t("p.premium"), price: "6,000", cadence: `FCFA${t("pricing.month")}`, features: [t("personal.p1"), t("personal.p2"), t("personal.p3")] },
-    ],
-    home: [
-      { name: t("p.basic"), price: "2,000", cadence: `FCFA${t("pricing.month")}`, features: [t("home.b1"), t("home.b2")] },
-      { name: t("p.standard"), price: "20,000", cadence: `FCFA${t("pricing.year")}`, features: [t("home.s1"), t("home.s2")], popular: true },
-      { name: t("p.premium"), price: "700,000", cadence: `FCFA · ${t("pricing.once")}`, features: [t("home.p1"), t("home.p2")] },
-    ],
-    biz: [
-      { name: t("p.basic"), price: "5,000", cadence: `FCFA${t("pricing.month")}`, features: [t("biz.b1"), t("biz.b2")] },
-      { name: t("p.standard"), price: "750,000", cadence: `FCFA · ${t("pricing.once")}`, features: [t("biz.s1"), t("biz.s2"), t("biz.s3")] },
-      { name: t("p.premium"), price: "500,000", cadence: `FCFA${t("pricing.month")}`, features: [t("biz.p1"), t("biz.p2"), t("biz.p3")], popular: true },
-    ],
-  };
-
-  const tabs = [
-    { k: "personal" as const, label: t("pricing.tab1") },
-    { k: "home" as const, label: t("pricing.tab2") },
-    { k: "biz" as const, label: t("pricing.tab3") },
+  const plans: Plan[] = [
+    { name: t("p.free"), price: "0", cadence: `FCFA${t("pricing.month")}`, features: [t("plan.free.f1"), t("plan.free.f2")] },
+    { name: t("p.plus"), price: "3,000", cadence: `FCFA${t("pricing.month")}`, features: [t("plan.plus.f1"), t("plan.plus.f2"), t("plan.plus.f3")] },
+    { name: t("p.pro"), price: "7,000", cadence: `FCFA${t("pricing.month")}`, features: [t("plan.pro.f1"), t("plan.pro.f2"), t("plan.pro.f3"), t("plan.pro.f4")], popular: true },
+    { name: t("p.business"), price: "15,000", cadence: `FCFA${t("pricing.month")}`, features: [t("plan.biz.f1"), t("plan.biz.f2"), t("plan.biz.f3")] },
+    { name: t("p.premium"), price: "25,000", cadence: `FCFA${t("pricing.month")}`, features: [t("plan.premium.f1"), t("plan.premium.f2")] },
   ];
 
   return (
@@ -243,24 +226,8 @@ export function Pricing() {
         <p className="mt-4 text-muted-foreground">{t("pricing.sub")}</p>
       </div>
 
-      <div className="mt-10 flex justify-center">
-        <div className="inline-flex rounded-full border border-border bg-card p-1">
-          {tabs.map((tb) => (
-            <button
-              key={tb.k}
-              onClick={() => setTab(tb.k)}
-              className={`px-5 py-2 text-sm font-medium rounded-full transition-colors ${
-                tab === tb.k ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {tb.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="mt-12 grid md:grid-cols-3 gap-6">
-        {plans[tab].map((p) => <PlanCard key={p.name} p={p} />)}
+      <div className="mt-16 grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+        {plans.map((p) => <PlanCard key={p.name} p={p} />)}
       </div>
     </section>
   );

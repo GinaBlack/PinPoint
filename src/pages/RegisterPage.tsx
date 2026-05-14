@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +27,7 @@ interface RegisterPageProps {
 function RegisterPage({ onSwitchToLogin }: RegisterPageProps) {
   const { register } = useStore();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<RegisterFormValues>({
@@ -43,7 +44,8 @@ function RegisterPage({ onSwitchToLogin }: RegisterPageProps) {
     // Simulate network delay
     await new Promise(resolve => setTimeout(resolve, 800));
     
-    const result = register(values.name, values.email, values.password);
+    const refCode = searchParams.get("ref") || undefined;
+    const result = register(values.name, values.email, values.password, refCode);
     setIsLoading(false);
 
     if (result.success) {
@@ -147,4 +149,3 @@ function RegisterPage({ onSwitchToLogin }: RegisterPageProps) {
   );
 }
 export default RegisterPage;
-

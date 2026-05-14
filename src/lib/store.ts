@@ -21,9 +21,46 @@ export type Address = {
 };
 
 export const PLAN_LIMITS = {
-  basic: { addresses: 3, links: 5 },
-  pro: { addresses: 50, links: 100 },
-  business: { addresses: Infinity, links: Infinity },
+  free: { 
+    personal: 1, 
+    home: 0, 
+    business: 0, 
+    anonymousLinks: 10, 
+    aliasLinks: 0,
+    features: [] as string[]
+  },
+  plus: { 
+    personal: 1, 
+    home: 0, 
+    business: 0, 
+    anonymousLinks: 15, 
+    aliasLinks: 7,
+    features: [] as string[]
+  },
+  pro: { 
+    personal: 2, 
+    home: 1, 
+    business: 0, 
+    anonymousLinks: Infinity, 
+    aliasLinks: 20,
+    features: ["photos", "notes"]
+  },
+  business: { 
+    personal: 2, 
+    home: 1, 
+    business: 1, 
+    anonymousLinks: Infinity, 
+    aliasLinks: Infinity,
+    features: ["photos", "notes", "public_profile"]
+  },
+  premium: { 
+    personal: 2, 
+    home: 1, 
+    business: 1, 
+    anonymousLinks: Infinity, 
+    aliasLinks: Infinity,
+    features: ["photos", "notes", "public_profile", "analytics"]
+  },
 };
 
 export type ShareLink = {
@@ -47,7 +84,7 @@ export type SavedLink = {
   disabledReason?: string;
 };
 
-export type Plan = "basic" | "pro" | "business";
+export type Plan = "free" | "plus" | "pro" | "business" | "premium";
 
 export type Notification = {
   id: string;
@@ -67,6 +104,10 @@ export type User = {
   bio?: string;
   avatar?: string;
   createdAt: number;
+  referralCode?: string;
+  referredBy?: string;
+  referralCount?: number;
+  bonusAliasLinks?: number;
 };
 
 export type ChatMessage = {
@@ -117,7 +158,7 @@ function seedUsers() {
       email: "demo@pinpoint.app",
       name: "Demo User",
       role: "user",
-      plan: "basic",
+      plan: "free",
       createdAt: Date.now(),
     };
     write(KEYS.users, [{ email: "demo@pinpoint.app", password: "password123", user: demoUser }]);
@@ -233,18 +274,35 @@ export function useStore() {
       return { success: false, error: "Invalid email or password" };
     },
 
-    register(name: string, email: string, password: string): { success: boolean; error?: string } {
+    register(name: string, email: string, password: string, refCode?: string): { success: boolean; error?: string } {
       const users = read<{ email: string; password: string; user: User }[]>(KEYS.users, []);
       if (users.find((u) => u.email === email)) {
         return { success: false, error: "Email already exists" };
       }
+
+      const myCode = uid().slice(0, 6).toUpperCase();
+      let referredBy: string | undefined;
+
+      if (refCode) {
+        const referrer = users.find(u => u.user.referralCode === refCode);
+        if (referrer) {
+          referredBy = referrer.user.id;
+          referrer.user.referralCount = (referrer.user.referralCount || 0) + 1;
+          referrer.user.bonusAliasLinks = (referrer.user.bonusAliasLinks || 0) + 10;
+        }
+      }
+
       const newUser: User = {
         id: uid(),
         email,
         name,
         role: email.endsWith("@admin.com") ? "admin" : "user",
-        plan: "basic",
+        plan: "free",
         createdAt: Date.now(),
+        referralCode: myCode,
+        referredBy,
+        referralCount: 0,
+        bonusAliasLinks: 0
       };
       write(KEYS.users, [...users, { email, password, user: newUser }]);
       write(KEYS.user, newUser);
@@ -258,10 +316,17 @@ export function useStore() {
     addAddress(a: Omit<Address, "id" | "createdAt">): { success: boolean; data?: Address; error?: string } {
       const all = read<Address[]>(KEYS.addresses, []);
       const currentUser = read<User | null>(KEYS.user, null);
-      const limit = PLAN_LIMITS[currentUser?.plan || "basic"].addresses;
+      const plan = currentUser?.plan || "free";
+      const limits = PLAN_LIMITS[plan];
+      
+      const type = a.type; // "personal" | "homeaddress" | "business"
+      const typeKey = type === "homeaddress" ? "home" : type;
+      
+      const count = all.filter(addr => addr.type === type).length;
+      const limit = (limits as any)[typeKey];
 
-      if (all.length >= limit) {
-        return { success: false, error: `Limit reached: Your plan allows only ${limit} addresses.` };
+      if (count >= limit) {
+        return { success: false, error: `Limit reached: Your plan allows only ${limit} ${type} addresses.` };
       }
 
       const next: Address = { ...a, id: uid(), createdAt: Date.now() };
@@ -289,10 +354,24 @@ export function useStore() {
     addLink(l: Omit<ShareLink, "id" | "createdAt">): { success: boolean; data?: ShareLink; error?: string } {
       const all = read<ShareLink[]>(KEYS.links, []);
       const currentUser = read<User | null>(KEYS.user, null);
-      const limit = PLAN_LIMITS[currentUser?.plan || "basic"].links;
+      const plan = currentUser?.plan || "free";
+      const limits = PLAN_LIMITS[plan];
+      const bonus = currentUser?.bonusAliasLinks || 0;
 
-      if (all.length >= limit) {
-        return { success: false, error: `Limit reached: Your plan allows only ${limit} links.` };
+      const type = l.type; 
+      const lastMonth = Date.now() - 30 * 24 * 3600 * 1000;
+
+      if (type === "anonymous") {
+        const count = all.filter(link => link.type === "anonymous" && link.createdAt > lastMonth).length;
+        if (count >= limits.anonymousLinks) {
+          return { success: false, error: `Limit reached: Your plan allows only ${limits.anonymousLinks} anonymous links per month.` };
+        }
+      } else if (type === "alias") {
+        const count = all.filter(link => link.type === "alias" && link.createdAt > lastMonth).length;
+        const totalLimit = limits.aliasLinks + bonus;
+        if (count >= totalLimit) {
+          return { success: false, error: `Limit reached: Your plan allows only ${totalLimit} alias links per month.` };
+        }
       }
 
       const next: ShareLink = { ...l, id: uid(), createdAt: Date.now() };

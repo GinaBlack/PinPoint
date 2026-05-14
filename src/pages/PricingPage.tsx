@@ -6,52 +6,72 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
 export default function PricingPage() {
-  const { lang } = useI18n();
-  const t = (en: string, fr: string) => (lang === "fr" ? fr : en);
+  const { t } = useI18n();
   const { user, updateUserPlan } = useStore();
   const navigate = useNavigate();
 
   const handleUpgrade = (plan: Plan) => {
     updateUserPlan(plan);
-    toast.success(t(`Upgraded to ${plan} plan!`, `Passé au forfait ${plan} !`));
+    toast.success(t("Upgraded!"));
     navigate("/app/plan");
   };
 
   const plans = [
     {
-      id: "basic",
-      name: t("Basic Personal", "Personnel de Base"),
-      price: "$0",
-      description: t("Perfect for individuals getting started.", "Idéal pour les particuliers qui débutent."),
+      id: "free",
+      name: t("p.free"),
+      price: t("p.free.price") + " XAF",
+      description: t("Basic personal use."),
       features: [
-        t("Up to 3 addresses", "Jusqu'à 3 adresses"),
-        t("Standard share links", "Liens de partage standard"),
-        t("Basic search visibility", "Visibilité de recherche basique"),
+        t("plan.free.f1"),
+        t("plan.free.f2"),
+      ],
+    },
+    {
+      id: "plus",
+      name: t("p.plus"),
+      price: t("p.plus.price") + " XAF",
+      description: t("More links for individuals."),
+      features: [
+        t("plan.plus.f1"),
+        t("plan.plus.f2"),
+        t("plan.plus.f3"),
       ],
     },
     {
       id: "pro",
-      name: "Pro",
-      price: "$9",
-      description: t("Advanced features for power users.", "Fonctionnalités avancées pour les utilisateurs avertis."),
+      name: t("p.pro"),
+      price: t("p.pro.price") + " XAF",
+      description: t("Advanced features for power users."),
       features: [
-        t("Unlimited addresses", "Adresses illimitées"),
-        t("Custom aliases", "Alias personnalisés"),
-        t("Priority delivery chat", "Chat de livraison prioritaire"),
-        t("Advanced analytics", "Analyses avancées"),
+        t("plan.pro.f1"),
+        t("plan.pro.f2"),
+        t("plan.pro.f3"),
+        t("plan.pro.f4"),
       ],
       popular: true,
     },
     {
       id: "business",
-      name: "Business",
-      price: "$29",
-      description: t("Scalable solutions for your business.", "Solutions évolutives pour votre entreprise."),
+      name: t("p.business"),
+      price: t("p.business.price") + " XAF",
+      description: t("Ideal for small businesses."),
       features: [
-        t("Everything in Pro", "Tout ce qui est dans Pro"),
-        t("Multi-user support", "Support multi-utilisateurs"),
-        t("API access", "Accès API"),
-        t("Dedicated support", "Support dédié"),
+        t("plan.pro.f1"), 
+        t("plan.biz.f1"),
+        t("plan.biz.f2"),
+        t("plan.biz.f3"),
+      ],
+    },
+    {
+      id: "premium",
+      name: t("p.premium"),
+      price: t("p.premium.price") + " XAF",
+      description: t("The ultimate business solution."),
+      features: [
+        t("plan.biz.f1"),
+        t("plan.premium.f1"),
+        t("plan.premium.f2"),
       ],
     },
   ];
@@ -59,13 +79,13 @@ export default function PricingPage() {
   return (
     <div className="space-y-10 py-6">
       <header className="text-center max-w-2xl mx-auto">
-        <h1 className="font-display text-4xl font-semibold">{t("Simple, transparent pricing", "Une tarification simple et transparente")}</h1>
+        <h1 className="font-display text-4xl font-semibold">{t("Simple, transparent pricing")}</h1>
         <p className="text-muted-foreground mt-3">
-          {t("Choose the plan that's right for you. All plans include our core features.", "Choisissez le forfait qui vous convient. Tous les forfaits incluent nos fonctionnalités de base.")}
+          {t("pricing.sub")}
         </p>
       </header>
 
-      <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+      <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-6 max-w-7xl mx-auto px-4">
         {plans.map((plan) => (
           <div
             key={plan.id}
@@ -78,7 +98,7 @@ export default function PricingPage() {
             {plan.popular && (
               <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full flex items-center gap-1.5 shadow-md">
                 <Sparkles className="w-3 h-3" />
-                {t("Most Popular", "Le plus populaire")}
+                {t("pricing.popular")}
               </div>
             )}
 
@@ -86,8 +106,8 @@ export default function PricingPage() {
               <h3 className="text-xl font-semibold mb-1">{plan.name}</h3>
               <p className="text-sm text-muted-foreground line-clamp-2 h-10">{plan.description}</p>
               <div className="mt-4 flex items-baseline gap-1">
-                <span className="text-4xl font-bold">{plan.price}</span>
-                <span className="text-muted-foreground">/mo</span>
+                <span className="text-2xl font-bold">{plan.price}</span>
+                <span className="text-muted-foreground text-xs">/mo</span>
               </div>
             </div>
 
@@ -109,7 +129,7 @@ export default function PricingPage() {
                 user?.plan === plan.id ? "bg-muted text-muted-foreground border-transparent cursor-default pointer-events-none" : ""
               }`}
             >
-              {user?.plan === plan.id ? t("Current Plan", "Forfait Actuel") : t("Select Plan", "Choisir")}
+              {user?.plan === plan.id ? t("Current Plan") : t("Select Plan")}
             </Button>
           </div>
         ))}

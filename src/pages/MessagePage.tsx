@@ -41,9 +41,18 @@ export default function MessagePage() {
                   <h2 className="font-display font-semibold text-lg truncate">{address.label}</h2>
                 </div>
                 {address.notes && (
-                  <div className="flex gap-2 text-xs text-muted-foreground bg-muted/50 p-2 rounded-xl">
-                    <Info className="w-3.5 h-3.5 shrink-0" />
-                    <p className="line-clamp-3">{address.notes}</p>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex gap-2 text-xs text-muted-foreground bg-muted/50 p-2 rounded-xl">
+                      <Info className="w-3.5 h-3.5 shrink-0" />
+                      <p className="line-clamp-3">{address.notes}</p>
+                    </div>
+                    {address.photos && address.photos.length > 0 && (
+                      <div className="flex gap-2">
+                        {address.photos.map((url, i) => (
+                          <img key={i} src={url} alt={address.label} className="w-12 h-12 rounded-lg object-cover border border-border/50" />
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

@@ -11,8 +11,19 @@ function MyLinks() {
   const t = (en: string, fr: string) => (lang === "fr" ? fr : en);
   const store = useStore();
 
-  const linkLimit = PLAN_LIMITS[store.user?.plan || "basic"].links;
-  const isLimitReached = store.links.length >= linkLimit;
+  const limits = PLAN_LIMITS[store.user?.plan || "free"];
+  const lastMonth = Date.now() - 30 * 24 * 3600 * 1000;
+  
+  const getUsage = (type: LinkType) => {
+    const count = store.links.filter(l => l.type === type && l.createdAt > lastMonth).length;
+    const limit = type === "anonymous" ? limits.anonymousLinks : type === "alias" ? limits.aliasLinks : Infinity;
+    return { count, limit };
+  };
+
+  const anonymous = getUsage("anonymous");
+  const alias = getUsage("alias");
+
+  const isLimitReached = (anonymous.count >= anonymous.limit) || (alias.count >= alias.limit);
 
   const getAddress = (id: string) => store.addresses.find((a) => a.id === id);
 
@@ -47,12 +58,20 @@ function MyLinks() {
         </div>
         
         <div className="flex flex-col items-end gap-2 text-right">
-          <div className="px-4 py-2 rounded-2xl bg-card border border-border/60 shadow-sm flex items-center gap-4">
-            <div>
-              <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">{t("Usage", "Utilisation")}</p>
-              <p className="text-sm font-bold tabular-nums">
-                {store.links.length} / {linkLimit === Infinity ? "∞" : linkLimit} {t("Links", "Liens")}
-              </p>
+          <div className="px-4 py-2 rounded-2xl bg-card border border-border/60 shadow-sm flex items-center gap-6">
+            <div className="flex gap-4">
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">{t("Anonymous Links", "Liens Anonymes")}</p>
+                <p className="text-xs font-bold tabular-nums">
+                  {anonymous.count} / {anonymous.limit === Infinity ? "∞" : anonymous.limit}
+                </p>
+              </div>
+              <div className="border-l border-border pl-4">
+                <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">{t("Alias Links", "Liens Alias")}</p>
+                <p className="text-xs font-bold tabular-nums">
+                  {alias.count} / {alias.limit === Infinity ? "∞" : alias.limit}
+                </p>
+              </div>
             </div>
             {isLimitReached && (
               <Button asChild size="sm" variant="ghost" className="rounded-full text-xs text-primary hover:bg-primary/5 h-8">

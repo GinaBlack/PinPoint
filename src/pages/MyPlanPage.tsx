@@ -1,37 +1,70 @@
 import { Link } from "react-router-dom";
-import { CreditCard, ShieldCheck, Zap, Building2, ExternalLink, ArrowRight } from "lucide-react";
+import { CreditCard, ShieldCheck, Zap, Building2, ExternalLink, ArrowRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useStore } from "@/lib/store";
+import { useStore, PLAN_LIMITS } from "@/lib/store";
 import { useI18n } from "@/lib/i18n";
 import { Progress } from "@/components/ui/progress";
 
 export default function MyPlanPage() {
   const { lang } = useI18n();
   const t = (en: string, fr: string) => (lang === "fr" ? fr : en);
-  const { user, addresses } = useStore();
+  const { user, addresses, links } = useStore();
 
   const planInfo = {
-    basic: {
-      name: t("Basic Personal", "Personnel de Base"),
+    free: {
+      name: t("Free", "Gratuit"),
       icon: <ShieldCheck className="w-6 h-6 text-primary" />,
-      limit: 3,
-      description: t("Standard features for personal use.", "Fonctionnalités standard pour un usage personnel."),
+      description: t("Basic personal use.", "Usage personnel de base."),
+    },
+    plus: {
+      name: "Plus",
+      icon: <Zap className="w-6 h-6 text-blue-400" />,
+      description: t("More links for individuals.", "Plus de liens pour les particuliers."),
     },
     pro: {
       name: "Pro",
       icon: <Zap className="w-6 h-6 text-amber-500" />,
-      limit: Infinity,
-      description: t("Professional features for power users.", "Fonctionnalités professionnelles pour les utilisateurs avertis."),
+      description: t("Advanced features for power users.", "Fonctionnalités avancées pour les experts."),
     },
     business: {
       name: "Business",
       icon: <Building2 className="w-6 h-6 text-blue-500" />,
-      limit: Infinity,
-      description: t("Business-grade tools and team support.", "Outils de niveau professionnel et support d'équipe."),
+      description: t("Ideal for small businesses.", "Idéal pour les petites entreprises."),
     },
-  }[user?.plan || "basic"];
+    premium: {
+      name: "Premium",
+      icon: <Sparkles className="w-6 h-6 text-purple-500" />,
+      description: t("The ultimate business solution.", "La solution professionnelle ultime."),
+    },
+  }[user?.plan || "free"];
 
-  const usagePercent = planInfo.limit === Infinity ? 0 : (addresses.length / planInfo.limit) * 100;
+  const limits = PLAN_LIMITS[user?.plan || "free"];
+  
+  const personalCount = addresses.filter(a => a.type === "personal").length;
+  const homeCount = addresses.filter(a => a.type === "homeaddress").length;
+  const businessCount = addresses.filter(a => a.type === "business").length;
+
+  const lastMonth = Date.now() - 30 * 24 * 3600 * 1000;
+  const anonymousCount = links.filter(l => l.type === "anonymous" && l.createdAt > lastMonth).length;
+  const aliasCount = links.filter(l => l.type === "alias" && l.createdAt > lastMonth).length;
+
+  const UsageItem = ({ label, current, limit, unit }: { label: string, current: number, limit: number, unit: string }) => {
+    const percent = limit === Infinity ? 0 : (current / limit) * 100;
+    return (
+      <div className="space-y-2">
+        <div className="flex justify-between items-end">
+          <div>
+            <p className="text-sm font-medium">{label}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {current} {t("of", "sur")} {limit === Infinity ? t("Unlimited", "Illimité") : limit} {unit}
+            </p>
+          </div>
+          {limit !== Infinity && <span className="text-sm font-bold tabular-nums">{Math.round(percent)}%</span>}
+        </div>
+        {limit !== Infinity && <Progress value={percent} className="h-1.5" />}
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-8">
@@ -58,23 +91,18 @@ export default function MyPlanPage() {
             
             <p className="text-muted-foreground mb-8 text-sm">{planInfo.description}</p>
 
-            <div className="space-y-4">
-              <div className="flex justify-between items-end">
-                <div>
-                  <p className="text-sm font-medium">{t("Address Usage", "Utilisation des adresses")}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {addresses.length} {t("of", "sur")} {planInfo.limit === Infinity ? t("Unlimited", "Illimité") : planInfo.limit} {t("locations", "lieux")}
-                  </p>
-                </div>
-                <span className="text-sm font-bold tabular-nums">{Math.round(usagePercent)}%</span>
+            <div className="grid md:grid-cols-2 gap-8">
+              <div className="space-y-6">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">{t("Address Limits", "Limites d'adresses")}</h3>
+                <UsageItem label={t("Personal", "Personnel")} current={personalCount} limit={limits.personal} unit={t("addresses", "adresses")} />
+                <UsageItem label={t("Home", "Domicile")} current={homeCount} limit={limits.home} unit={t("addresses", "adresses")} />
+                <UsageItem label={t("Business", "Professionnel")} current={businessCount} limit={limits.business} unit={t("addresses", "adresses")} />
               </div>
-              <Progress value={usagePercent} className="h-2" />
-              {planInfo.limit !== Infinity && addresses.length >= planInfo.limit && (
-                <p className="text-xs text-destructive flex items-center gap-1.5 font-medium">
-                  <ArrowRight className="w-3 h-3" />
-                  {t("Upgrade to Pro to add more addresses.", "Passez à Pro pour ajouter plus d'adresses.")}
-                </p>
-              )}
+              <div className="space-y-6">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">{t("Link Usage (Monthly)", "Utilisation des liens (Mensuel)")}</h3>
+                <UsageItem label={t("Anonymous", "Anonyme")} current={anonymousCount} limit={limits.anonymousLinks} unit={t("usages", "utilisations")} />
+                <UsageItem label={t("Alias", "Alias")} current={aliasCount} limit={limits.aliasLinks} unit={t("usages", "utilisations")} />
+              </div>
             </div>
           </div>
 
@@ -95,8 +123,8 @@ export default function MyPlanPage() {
             <p className="text-xs text-muted-foreground leading-relaxed mb-4">
               {t("Our support team is here to help you with any billing or plan questions.", "Notre équipe de support est là pour vous aider pour toute question sur la facturation ou les forfaits.")}
             </p>
-            <Button variant="secondary" className="w-full rounded-xl text-xs" size="sm">
-              {t("Contact Support", "Contacter le Support")}
+            <Button asChild variant="secondary" className="w-full rounded-xl text-xs" size="sm">
+              <Link to="/app/support">{t("Contact Support", "Contacter le Support")}</Link>
             </Button>
           </div>
 
@@ -104,12 +132,12 @@ export default function MyPlanPage() {
             <div className="w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center mb-4 shadow-pin">
               <Zap className="w-5 h-5" />
             </div>
-            <h3 className="font-semibold mb-2 text-sm">{t("Upgrade to Pro", "Passez à Pro")}</h3>
+            <h3 className="font-semibold mb-2 text-sm">{t("Explore Plans", "Explorer les Forfaits")}</h3>
             <p className="text-[11px] text-muted-foreground leading-relaxed mb-4">
-              {t("Get unlimited addresses, custom aliases, and priority support.", "Obtenez des adresses illimitées, des alias personnalisés et un support prioritaire.")}
+              {t("Find the perfect plan for your needs and unlock more features.", "Trouvez le forfait idéal pour vos besoins et débloquez plus de fonctionnalités.")}
             </p>
             <Button asChild className="w-full rounded-xl text-xs h-9 bg-primary" size="sm">
-              <Link to="/app/pricing">{t("View Plans", "Voir les Forfaits")}</Link>
+              <Link to="/app/pricing">{t("View Pricing", "Voir les Tarifs")}</Link>
             </Button>
           </div>
         </aside>

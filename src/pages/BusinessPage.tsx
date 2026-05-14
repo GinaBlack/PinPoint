@@ -5,11 +5,10 @@ import { Building2, Copy, Download, Globe2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { useStore } from "@/lib/store";
+import { useStore, PLAN_LIMITS } from "@/lib/store";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
-
-
+import { BarChart3, TrendingUp, Users } from "lucide-react";
 
 function BusinessPage() {
   const { lang } = useI18n();
@@ -19,6 +18,9 @@ function BusinessPage() {
   const candidates = store.addresses.filter(a => a.type === "business");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = candidates.find((a) => a.id === selectedId) ?? candidates[0];
+
+  const limits = PLAN_LIMITS[store.user?.plan || "free"];
+  const hasAnalytics = limits.features.includes("analytics");
 
   if (!selected) {
     return (
@@ -95,9 +97,27 @@ function BusinessPage() {
         </div>
 
         <div className="rounded-3xl border border-border bg-card p-6 space-y-5">
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{t("Type", "Type")}</label>
+            <div className="px-3 py-2 rounded-xl bg-muted/50 border border-border/50 text-sm capitalize text-muted-foreground cursor-not-allowed flex items-center gap-2">
+              <Building2 className="w-4 h-4" />
+              {t("Business", "Entreprise")}
+            </div>
+            <p className="text-[10px] text-muted-foreground italic">{t("Type cannot be changed after registration.", "Le type ne peut plus être changé.")}</p>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium">{t("Display name", "Nom affiché")}</label>
+            <Input
+              value={selected.label}
+              onChange={(e) => store.updateAddress(selected.id, { label: e.target.value })}
+              className="mt-1.5 h-11 rounded-xl"
+            />
+          </div>
+
           <div>
             <label className="text-sm font-medium">{t("Public alias", "Alias public")}</label>
-            <div className="mt-1.5 flex items-center gap-1 rounded-lg border border-input bg-background px-3 h-11">
+            <div className="mt-1.5 flex items-center gap-1 rounded-xl border border-input bg-background px-3 h-11">
               <span className="text-muted-foreground text-sm">pinpoint.app/@</span>
               <input
                 value={selected.alias ?? ""}
@@ -107,15 +127,8 @@ function BusinessPage() {
               />
             </div>
           </div>
-          <div>
-            <label className="text-sm font-medium">{t("Display name", "Nom affiché")}</label>
-            <Input
-              value={selected.label}
-              onChange={(e) => store.updateAddress(selected.id, { label: e.target.value })}
-              className="mt-1.5 h-11"
-            />
-          </div>
-          <div className="flex items-center justify-between p-3 rounded-xl bg-muted/50">
+
+          <div className="flex items-center justify-between p-3 rounded-xl bg-muted/30 border border-border/40">
             <div>
               <p className="text-sm font-medium flex items-center gap-1.5"><Globe2 className="w-4 h-4" /> {t("Public alias search", "Recherche publique")}</p>
               <p className="text-xs text-muted-foreground mt-0.5">{t("Customers find you via PinPoint search.", "Les clients vous trouvent via la recherche.")}</p>
@@ -128,18 +141,58 @@ function BusinessPage() {
               }}
             />
           </div>
-          <div className="flex items-center justify-between p-3 rounded-xl bg-muted/50">
-            <div>
-              <p className="text-sm font-medium flex items-center gap-1.5"><Building2 className="w-4 h-4" /> {t("Mark as business", "Marquer entreprise")}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{t("Show a business badge on the public page.", "Affiche un badge entreprise.")}</p>
-            </div>
-            <Switch
-              checked={!!selected.isBusiness}
-              onCheckedChange={(v) => store.updateAddress(selected.id, { isBusiness: v })}
-            />
-          </div>
         </div>
       </div>
+
+      {hasAnalytics ? (
+        <div className="rounded-3xl border border-border bg-card p-8">
+          <div className="flex items-center justify-between mb-8">
+            <h3 className="font-display text-2xl font-semibold flex items-center gap-2">
+              <BarChart3 className="w-6 h-6 text-primary" />
+              {t("Business Analytics", "Analyses Business")}
+            </h3>
+            <span className="text-xs font-bold uppercase tracking-widest text-primary bg-primary/10 px-3 py-1 rounded-full">{t("Premium Feature", "Option Premium")}</span>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="p-6 rounded-2xl bg-muted/30 border border-border/50">
+              <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                <Users className="w-4 h-4" />
+                <span className="text-xs font-bold uppercase tracking-wider">{t("Unique Visitors", "Visiteurs Uniques")}</span>
+              </div>
+              <p className="text-3xl font-bold">1,284</p>
+              <p className="text-[11px] text-green-500 font-bold mt-1">↑ 12% {t("vs last month", "vs mois dernier")}</p>
+            </div>
+            <div className="p-6 rounded-2xl bg-muted/30 border border-border/50">
+              <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                <Globe2 className="w-4 h-4" />
+                <span className="text-xs font-bold uppercase tracking-wider">{t("Alias Scans", "Scans d'Alias")}</span>
+              </div>
+              <p className="text-3xl font-bold">856</p>
+              <p className="text-[11px] text-green-500 font-bold mt-1">↑ 8% {t("vs last month", "vs mois dernier")}</p>
+            </div>
+            <div className="p-6 rounded-2xl bg-muted/30 border border-border/50">
+              <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                <TrendingUp className="w-4 h-4" />
+                <span className="text-xs font-bold uppercase tracking-wider">{t("Conversion Rate", "Taux de Conversion")}</span>
+              </div>
+              <p className="text-3xl font-bold">24.2%</p>
+              <p className="text-[11px] text-amber-500 font-bold mt-1">→ {t("stable", "stable")}</p>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-3xl border border-dashed border-border bg-muted/10 p-12 text-center">
+          <BarChart3 className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-30" />
+          <h3 className="font-semibold text-lg">{t("Unlock Business Analytics", "Débloquez les Analyses")}</h3>
+          <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
+            {t("Upgrade to Premium to see who is visiting your business address and how they find you.", "Passez à Premium pour voir qui visite votre adresse business et comment on vous trouve.")}
+          </p>
+          <Button asChild className="mt-6 rounded-full" variant="outline">
+            <Link to="/app/pricing">{t("Upgrade Now", "Améliorer")}</Link>
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

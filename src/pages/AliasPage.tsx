@@ -1,7 +1,7 @@
 import { NavLink} from "../components/NavLink";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Building2, MapPin, MessageCircle, Navigation, Bookmark } from "lucide-react";
+import { Building2, MapPin, MessageCircle, Navigation, Bookmark, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/site/Navbar";
 import { findByAlias, useStore, type Address } from "@/lib/store";
@@ -15,6 +15,7 @@ function AliasPage() {
   const { lang } = useI18n();
   const t = (en: string, fr: string) => (lang === "fr" ? fr : en);
   const [addr, setAddr] = useState<Address | null>(null);
+  const [lightboxPhoto, setLightboxPhoto] = useState<string | null>(null);
   const store = useStore();
 
   useEffect(() => {
@@ -72,6 +73,20 @@ function AliasPage() {
           </div>
         )}
 
+        {addr.photos && addr.photos.length > 0 && (
+          <div className="grid grid-cols-2 gap-4">
+            {addr.photos.map((url, i) => (
+              <div 
+                key={i} 
+                className="aspect-square rounded-2xl border border-border overflow-hidden cursor-zoom-in group/photo"
+                onClick={() => setLightboxPhoto(url)}
+              >
+                <img src={url} alt={addr.label} className="w-full h-full object-cover group-hover/photo:scale-105 transition-transform duration-500" />
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="flex flex-wrap gap-2">
           <Button asChild className="rounded-full bg-gradient-primary text-primary-foreground hover:opacity-90 shadow-pin border-0 h-12 px-5">
             <a href={navUrl} target="_blank" rel="noreferrer"><Navigation className="w-4 h-4 mr-1.5" /> {t("Navigate", "Naviguer")}</a>
@@ -84,6 +99,28 @@ function AliasPage() {
           </Button>
         </div>
       </div>
+
+      {/* Lightbox Modal */}
+      {lightboxPhoto && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300"
+          onClick={() => setLightboxPhoto(null)}
+        >
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="absolute top-4 right-4 text-white hover:bg-white/10 rounded-full"
+            onClick={() => setLightboxPhoto(null)}
+          >
+            <X className="w-6 h-6" />
+          </Button>
+          <img 
+            src={lightboxPhoto} 
+            className="max-w-full max-h-full object-contain rounded-xl shadow-2xl animate-in zoom-in-95 duration-300" 
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 }

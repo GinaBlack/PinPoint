@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useI18n } from "@/lib/i18n";
-import { useStore, type AddressType } from "@/lib/store";
+import { useStore, type AddressType, PLAN_LIMITS } from "@/lib/store";
 import { PinMap, useMyLocation } from "@/components/site/PinMap";
 import { toast } from "sonner";
 
@@ -19,6 +19,9 @@ function AddAddressPage() {
   const t = (en: string, fr: string) => (lang === "fr" ? fr : en);
   const navigate = useNavigate();
   const { addAddress, user } = useStore();
+
+  const limits = PLAN_LIMITS[user?.plan || "free"];
+  const hasPhotosNotes = limits.features.includes("photos") || limits.features.includes("notes");
 
   // State extracted from OnboardingPage Steps 0 & 1
   const { pos, setPos, request, requested } = useMyLocation();
@@ -187,57 +190,61 @@ function AddAddressPage() {
             </div>
 
             {/* Photo Uploads */}
-            <div className="mt-4">
-              <label className="text-sm font-medium block mb-2">{t("Front Gate Photos (Max 2)", "Photos de la porte d'entrée (Max 2)")}</label>
-              <div className="flex flex-wrap gap-3 mt-1.5">
-                {photoUrls.map((url, index) => (
-                  <div key={index} className="relative w-24 h-24 rounded-lg overflow-hidden border border-border flex items-center justify-center bg-muted group">
-                    {url ? (
-                      <>
-                        <img src={url} alt={`Front gate photo ${index + 1}`} className="w-full h-full object-cover"/>
-                        <button
-                          onClick={() => removePhoto(index)}
-                          className="absolute top-1 right-1 bg-black bg-opacity-50 rounded-full p-1 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                          <X className="w-3 h-3 text-white" />
-                        </button>
-                      </>
-                    ) : (
-                      null
-                    )}
-                  </div>
-                ))}
-                {photoUrls.length < 2 && (
-                  <label htmlFor="photo-upload-new" className="w-24 h-24 rounded-lg border border-dashed border-border flex items-center justify-center cursor-pointer bg-muted">
-                    <ImagePlus className="w-6 h-6 text-muted-foreground" />
-                    <input
-                      id="photo-upload-new"
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          const reader = new FileReader();
-                          reader.onloadend = () => {
-                            setPhotoUrls([...photoUrls, reader.result as string]);
-                          };
-                          reader.readAsDataURL(file);
-                        }
-                      }}
-                      className="hidden"
-                    />
-                  </label>
-                )}
+            {hasPhotosNotes && (
+              <div className="mt-4">
+                <label className="text-sm font-medium block mb-2">{t("Front Gate Photos (Max 2)", "Photos de la porte d'entrée (Max 2)")}</label>
+                <div className="flex flex-wrap gap-3 mt-1.5">
+                  {photoUrls.map((url, index) => (
+                    <div key={index} className="relative w-24 h-24 rounded-lg overflow-hidden border border-border flex items-center justify-center bg-muted group">
+                      {url ? (
+                        <>
+                          <img src={url} alt={`Front gate photo ${index + 1}`} className="w-full h-full object-cover"/>
+                          <button
+                            onClick={() => removePhoto(index)}
+                            className="absolute top-1 right-1 bg-black bg-opacity-50 rounded-full p-1 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                            <X className="w-3 h-3 text-white" />
+                          </button>
+                        </>
+                      ) : (
+                        null
+                      )}
+                    </div>
+                  ))}
+                  {photoUrls.length < 2 && (
+                    <label htmlFor="photo-upload-new" className="w-24 h-24 rounded-lg border border-dashed border-border flex items-center justify-center cursor-pointer bg-muted">
+                      <ImagePlus className="w-6 h-6 text-muted-foreground" />
+                      <input
+                        id="photo-upload-new"
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              setPhotoUrls([...photoUrls, reader.result as string]);
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
-            <div>
-              <label className="text-sm font-medium block mb-2">{t("Notes for visitors (optional)", "Notes pour les visiteurs (optionnel)")}</label>
-              <Textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder={t("Blue door, ring twice", "Porte bleue, sonnez deux fois")}
-                className="mt-1.5 min-h-24"/>
-            </div>
+            {hasPhotosNotes && (
+              <div>
+                <label className="text-sm font-medium block mb-2">{t("Notes for visitors (optional)", "Notes pour les visiteurs (optionnel)")}</label>
+                <Textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder={t("Blue door, ring twice", "Porte bleue, sonnez deux fois")}
+                  className="mt-1.5 min-h-24"/>
+              </div>
+            )}
           </div>
           <Footer
             back={() => navigate(-1)} // Option to go back to the previous page

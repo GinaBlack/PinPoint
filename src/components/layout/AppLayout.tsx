@@ -16,7 +16,14 @@ import {
   Bell,
   CreditCard,
   Shield,
-  User
+  User,
+  Section,
+  LayoutDashboard,
+  LucideInfo,
+  Headphones,
+  Info,
+  Settings,
+  Gift
 } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { useStore } from "@/lib/store";
@@ -47,7 +54,7 @@ function AppLayout() {
 
   const menuItems = [
     { to: "/", label: t("Home", "Accueil"), icon: HomeIcon, exact: true }, // Changed from /app/overview to /
-    { to: "/app/overview", label: t("Dashboard", "Tableau de bord"), icon: HomeIcon, exact: true }, // Added as separate, or can be removed if redundant
+    { to: "/app/overview", label: t("Dashboard", "Tableau de bord"), icon: LayoutDashboard, exact: true }, // Added as separate, or can be removed if redundant
     { to: "/app/addresses", label: t("My addresses", "Mes adresses"), icon: MapPin },
     { to: "/app/links", label: t("My Links", "Mes Liens"), icon: Link2 },
     { to: "/app/messages", label: t("Messages", "Messages"), icon: MessageCircle },
@@ -58,6 +65,9 @@ function AppLayout() {
     { to: "/app/saved", label: t("Saved Links", "Liens enregistrés"), icon: Bookmark },
     { to: "/app/business", label: t("Business", "Entreprise"), icon: Building2 },
     { to: "/app/search", label: t("Public search", "Recherche publique"), icon: Search },
+    { to: "/app/referral", label: t("Refer & Earn", "Parrainage"), icon: Gift },
+    { to: "/app/support", label: t("Customer Support", "Assistance client"), icon: Headphones },
+    { to: "/app/help", label: t("Help", "Aide"), icon: Info },
   ];
 
   const SidebarContent = ({ mobile = false, onClose }: { mobile?: boolean; onClose?: () => void }) => (
@@ -79,7 +89,7 @@ function AppLayout() {
               key={item.to}
               to={item.to}
               onClick={onClose}
-              className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all duration-200 ${
+              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-all duration-200 ${
                 isActive
                   ? "bg-primary text-primary-foreground shadow-md"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
