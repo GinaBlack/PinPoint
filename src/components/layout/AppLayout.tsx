@@ -16,6 +16,7 @@ import {
   Bell,
   CreditCard,
   Shield,
+  ShieldCheck,
   User,
   Section,
   LayoutDashboard,
@@ -23,7 +24,8 @@ import {
   Headphones,
   Info,
   Settings,
-  Gift
+  Gift,
+  Loader2
 } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { useStore } from "@/lib/store";
@@ -33,12 +35,21 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 function AppLayout() {
   const navigate = useNavigate();
-  const { user, logout, onboarded } = useStore();
+  const { user, logout, onboarded, loading } = useStore();
   const { lang } = useI18n();
   const t = (en: string, fr: string) => (lang === "fr" ? fr : en);
   const { pathname } = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   // Redirect if not logged in
   if (!user) return <Navigate to="/auth" replace />;
@@ -53,8 +64,8 @@ function AppLayout() {
   };
 
   const menuItems = [
-    { to: "/", label: t("Home", "Accueil"), icon: HomeIcon, exact: true }, // Changed from /app/overview to /
-    { to: "/app/overview", label: t("Dashboard", "Tableau de bord"), icon: LayoutDashboard, exact: true }, // Added as separate, or can be removed if redundant
+    { to: "/", label: t("Home", "Accueil"), icon: HomeIcon, exact: true }, 
+    { to: "/app/overview", label: t("Dashboard", "Tableau de bord"), icon: LayoutDashboard, exact: true }, 
     { to: "/app/addresses", label: t("My addresses", "Mes adresses"), icon: MapPin },
     { to: "/app/links", label: t("My Links", "Mes Liens"), icon: Link2 },
     { to: "/app/messages", label: t("Messages", "Messages"), icon: MessageCircle },
@@ -67,11 +78,16 @@ function AppLayout() {
     { to: "/app/search", label: t("Public search", "Recherche publique"), icon: Search },
     { to: "/app/referral", label: t("Refer & Earn", "Parrainage"), icon: Gift },
     { to: "/app/support", label: t("Customer Support", "Assistance client"), icon: Headphones },
+    
     { to: "/app/help", label: t("Help", "Aide"), icon: Info },
   ];
 
+  if (user?.role === "admin") {
+    menuItems.push({ to: "/app/admin", label: t("Admin", "Admin"), icon: ShieldCheck });
+  }
+
   const SidebarContent = ({ mobile = false, onClose }: { mobile?: boolean; onClose?: () => void }) => (
-    <div className="flex flex-col h-full bg-card border-r border-border/60">
+    <div className="flex flex-col  bg-card border-r border-border/60">
       <div className="p-6 flex items-center gap-3">
         <div className="w-9 h-9 rounded-xl bg-gradient-primary shadow-pin flex items-center justify-center shrink-0">
           <MapPin className="w-5 h-5 text-primary-foreground" />
@@ -81,7 +97,7 @@ function AppLayout() {
         )}
       </div>
 
-      <nav className="flex-1 px-3 space-y-1">
+      <nav className="flex-1 px-3 space-y-1 ">
         {menuItems.map((item) => {
           const isActive = item.exact ? pathname === item.to : pathname.startsWith(item.to);
           return (
@@ -89,13 +105,13 @@ function AppLayout() {
               key={item.to}
               to={item.to}
               onClick={onClose}
-              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-all duration-200 ${
+              className={`flex items-center gap-2 px-3 py-2  rounded-xl text-sm transition-all duration-200 ${
                 isActive
                   ? "bg-primary text-primary-foreground shadow-md"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
               }`}
             >
-              <item.icon className="w-5 h-5 shrink-0" />
+              <item.icon className=" w-5 h-5 shrink-0" />
               {(!isCollapsed || mobile) && <span>{item.label}</span>}
             </Link>
           );

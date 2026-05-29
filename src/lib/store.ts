@@ -1,4 +1,23 @@
 import { useEffect, useState } from "react";
+import { 
+  collection, 
+  doc, 
+  setDoc, 
+  getDoc, 
+  getDocs,
+  updateDoc, 
+  onSnapshot, 
+  query, 
+  where, 
+  addDoc, 
+  deleteDoc, 
+  orderBy, 
+  serverTimestamp,
+  Timestamp,
+  writeBatch
+} from "firebase/firestore";
+import { db, auth as firebaseAuth } from "./firebase";
+import { onAuthStateChanged, type User as FirebaseUser, signOut } from "firebase/auth";
 
 export type LinkType = "anonymous" | "alias" | "message";
 export type LinkStatus = "active" | "disabled";
@@ -7,15 +26,16 @@ export type AddressType = "personal" | "homeaddress" | "business";
 
 export type Address = {
   id: string;
-  label: string;          // "Home", "Shop", "Maman Bamenda"
+  userId: string;
+  label: string;          
   type: AddressType;
   businessName?: string;
   lat: number;
   lng: number;
   notes?: string;
-  photos?: string[];      // Array to store multiple photos (e.g., data URLs or URLs)
+  photos?: string[];      
   isBusiness?: boolean;
-  alias?: string;         // public alias slug, unique-ish
+  alias?: string;         
   isPublic?: boolean;
   createdAt: number;
 };
@@ -65,20 +85,20 @@ export const PLAN_LIMITS = {
 
 export type ShareLink = {
   id: string;
+  userId: string;
   addressId: string;
   type: LinkType;
-  alias?: string;         // mirrors address alias when type=alias
-  expiresAt?: number;     // anonymous: 24h
+  alias?: string;         
+  expiresAt?: number;     
   createdAt: number;
 };
 
 export type SavedLink = {
   id: string;
   url: string;
-  name: string;           // sender label or "Anonymous"
+  name: string;           
   type: LinkType;
   receivedAt: number;
-  // resolved snapshot (optional)
   addressSnapshot?: { lat: number; lng: number; label: string };
   status: LinkStatus;
   disabledReason?: string;
@@ -107,7 +127,9 @@ export type User = {
   referralCode?: string;
   referredBy?: string;
   referralCount?: number;
-  bonusAliasLinks?: number;
+  bonusAnonymousLinks?: number;
+  isVerified: boolean;
+  isOnboarded?: boolean;
 };
 
 export type ChatMessage = {
@@ -118,103 +140,76 @@ export type ChatMessage = {
   timestamp: number;
 };
 
-const KEYS = {
-  addresses: "pp.addresses",
-  links: "pp.links",
-  saved: "pp.savedLinks",
-  onboarded: "pp.onboarded",
-  user: "pp.user",
-  users: "pp.users", // For mock registration
-  messages: "pp.messages",
-  notifications: "pp.notifications",
-};
-
-function seedNotifications(): Notification[] {
-  return [
-    {
-      id: uid(),
-      title: "Welcome to PinPoint!",
-      message: "Thank you for joining our platform. Start by dropping your first pin.",
-      type: "success",
-      read: false,
-      createdAt: Date.now() - 1000 * 3600,
-    },
-    {
-      id: uid(),
-      title: "New Feature: Message Links",
-      message: "You can now chat directly with delivery agents using special message links.",
-      type: "info",
-      read: true,
-      createdAt: Date.now() - 1000 * 3600 * 24,
-    }
-  ];
-}
-
-function seedUsers() {
-  const users = read<{ email: string; password: string; user: User }[]>(KEYS.users, []);
-  if (users.length === 0) {
-    const demoUser: User = {
-      id: "demo-user",
-      email: "demo@pinpoint.app",
-      name: "Demo User",
-      role: "user",
-      plan: "free",
-      createdAt: Date.now(),
-    };
-    write(KEYS.users, [{ email: "demo@pinpoint.app", password: "password123", user: demoUser }]);
-  }
-}
-
-function read<T>(key: string, fallback: T): T {
-  if (typeof window === "undefined") return fallback;
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as T) : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-function write<T>(key: string, val: T) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(key, JSON.stringify(val));
-  window.dispatchEvent(new CustomEvent("pp:store", { detail: { key } }));
-}
-
-export function uid() {
-  return Math.random().toString(36).slice(2, 10);
-}
-
 /* ---------- React hook ---------- */
 
 export function useStore() {
-  seedUsers();
-  const [addresses, setAddresses] = useState<Address[]>(() => read<Address[]>(KEYS.addresses, []));
-  const [links, setLinks] = useState<ShareLink[]>(() => read<ShareLink[]>(KEYS.links, []));
-  const [saved, setSaved] = useState<SavedLink[]>(() => read<SavedLink[]>(KEYS.saved, seedSaved()));
-  const [user, setUser] = useState<User | null>(() => read<User | null>(KEYS.user, null));
-  const [onboarded, setOnboardedState] = useState<boolean>(() => read<boolean>(KEYS.onboarded, false));
-  const [messages, setMessages] = useState<ChatMessage[]>(() => read<ChatMessage[]>(KEYS.messages, []));
-  const [notifications, setNotifications] = useState<Notification[]>(() => read<Notification[]>(KEYS.notifications, seedNotifications()));
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [links, setLinks] = useState<ShareLink[]>([]);
+  const [saved, setSaved] = useState<SavedLink[]>([]);
+  const [user, setUser] = useState<User | null>(null);
+  const [onboarded, setOnboardedState] = useState<boolean>(false);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const sync = () => {
-      setAddresses(read<Address[]>(KEYS.addresses, []));
-      setLinks(read<ShareLink[]>(KEYS.links, []));
-      setSaved(read<SavedLink[]>(KEYS.saved, seedSaved()));
-      setUser(read<User | null>(KEYS.user, null));
-      setOnboardedState(read<boolean>(KEYS.onboarded, false));
-      setMessages(read<ChatMessage[]>(KEYS.messages, []));
-      setNotifications(read<Notification[]>(KEYS.notifications, seedNotifications()));
-    };
-    // sync(); // No longer needed as first sync, only for events
-    const onStore = () => sync();
-    window.addEventListener("pp:store", onStore);
-    window.addEventListener("storage", onStore);
-    return () => {
-      window.removeEventListener("pp:store", onStore);
-      window.removeEventListener("storage", onStore);
-    };
+    const unsubAuth = onAuthStateChanged(firebaseAuth, (fbUser) => {
+      if (!fbUser) {
+        setUser(null);
+        setAddresses([]);
+        setLinks([]);
+        setSaved([]);
+        setNotifications([]);
+        setOnboardedState(false);
+        setLoading(false);
+        return;
+      }
+
+      // Listen to User doc
+      const unsubUser = onSnapshot(doc(db, "users", fbUser.uid), (snap) => {
+        if (snap.exists()) {
+          const userData = snap.data() as User;
+          setUser(userData);
+          setOnboardedState(!!userData.isOnboarded);
+        } else {
+          // If user doc doesn't exist yet, we'll handle it in syncUser or registration
+          setUser(null);
+        }
+        setLoading(false);
+      });
+
+      // Listen to Addresses
+      const qAddresses = query(collection(db, "addresses"), where("userId", "==", fbUser.uid));
+      const unsubAddresses = onSnapshot(qAddresses, (snap) => {
+        setAddresses(snap.docs.map(d => ({ id: d.id, ...d.data() } as Address)));
+      });
+
+      // Listen to Links
+      const qLinks = query(collection(db, "links"), where("userId", "==", fbUser.uid));
+      const unsubLinks = onSnapshot(qLinks, (snap) => {
+        setLinks(snap.docs.map(d => ({ id: d.id, ...d.data() } as ShareLink)));
+      });
+
+      // Listen to Saved Links
+      const unsubSaved = onSnapshot(collection(db, "users", fbUser.uid, "saved_links"), (snap) => {
+        setSaved(snap.docs.map(d => ({ id: d.id, ...d.data() } as SavedLink)).sort((a,b) => b.receivedAt - a.receivedAt));
+      });
+
+      // Listen to Notifications
+      const unsubNotifs = onSnapshot(collection(db, "users", fbUser.uid, "notifications"), (snap) => {
+        setNotifications(snap.docs.map(d => ({ id: d.id, ...d.data() } as Notification)).sort((a,b) => b.createdAt - a.createdAt));
+      });
+
+      return () => {
+        unsubUser();
+        unsubAddresses();
+        unsubLinks();
+        unsubSaved();
+        unsubNotifs();
+      };
+    });
+
+    return () => unsubAuth();
   }, []);
 
   return {
@@ -225,250 +220,198 @@ export function useStore() {
     onboarded,
     messages,
     notifications,
+    loading,
 
-    markNotificationAsRead(id: string) {
-      const all = read<Notification[]>(KEYS.notifications, seedNotifications()).map(n => 
-        n.id === id ? { ...n, read: true } : n
-      );
-      write(KEYS.notifications, all);
+    async markNotificationAsRead(id: string) {
+      if (!user) return;
+      await updateDoc(doc(db, "users", user.id, "notifications", id), { read: true });
     },
 
-    updateUserPlan(plan: Plan) {
-      const currentUser = read<User | null>(KEYS.user, null);
-      if (currentUser) {
-        const updated = { ...currentUser, plan };
-        write(KEYS.user, updated);
-        // Also update in users list
-        const users = read<{ email: string; password: string; user: User }[]>(KEYS.users, []);
-        const updatedUsers = users.map(u => u.user.id === updated.id ? { ...u, user: updated } : u);
-        write(KEYS.users, updatedUsers);
+    async updateUserPlan(plan: Plan) {
+      if (!user) return;
+      await updateDoc(doc(db, "users", user.id), { plan });
+    },
+
+    async updateProfile(patch: Partial<Pick<User, "name" | "bio" | "avatar" | "isOnboarded" | "role">>) {
+      if (!user) return;
+      await updateDoc(doc(db, "users", user.id), patch);
+    },
+
+    async addMessage(msg: Omit<ChatMessage, "id" | "timestamp">) {
+      const docRef = await addDoc(collection(db, "messages"), {
+        ...msg,
+        timestamp: Date.now()
+      });
+      return { id: docRef.id, ...msg, timestamp: Date.now() };
+    },
+
+    async logout() {
+      await signOut(firebaseAuth);
+    },
+
+    async syncUser(email: string, name?: string) {
+      const fbUser = firebaseAuth.currentUser;
+      if (!fbUser) return null;
+
+      const userDoc = await getDoc(doc(db, "users", fbUser.uid));
+      if (!userDoc.exists()) {
+        const newUser: User = {
+          id: fbUser.uid,
+          email,
+          name: name || email.split('@')[0],
+          role: email.endsWith("@admin.com") ? "admin" : "user",
+          plan: "free",
+          createdAt: Date.now(),
+          referralCode: Math.random().toString(36).slice(2, 8).toUpperCase(),
+          referralCount: 0,
+          bonusAnonymousLinks: 0,
+          isVerified: true, // If syncing from Firebase, assume verified or handled by Firebase Auth
+          isOnboarded: false
+        };
+        await setDoc(doc(db, "users", fbUser.uid), newUser);
+        
+        // Seed initial notifications
+        await addDoc(collection(db, "users", fbUser.uid, "notifications"), {
+          title: "Welcome to PinPoint!",
+          message: "Thank you for joining our platform. Start by dropping your first pin.",
+          type: "success",
+          read: false,
+          createdAt: Date.now(),
+        });
+
+        return newUser;
       }
+      return userDoc.data() as User;
     },
 
-    updateProfile(patch: Partial<Pick<User, "name" | "bio" | "avatar">>) {
-      const currentUser = read<User | null>(KEYS.user, null);
-      if (currentUser) {
-        const updated = { ...currentUser, ...patch };
-        write(KEYS.user, updated);
-        // Also update in users list
-        const users = read<{ email: string; password: string; user: User }[]>(KEYS.users, []);
-        const updatedUsers = users.map(u => u.user.id === updated.id ? { ...u, user: updated } : u);
-        write(KEYS.users, updatedUsers);
-      }
-    },
-
-    addMessage(msg: Omit<ChatMessage, "id" | "timestamp">) {
-      const next: ChatMessage = { ...msg, id: uid(), timestamp: Date.now() };
-      const all = [...read<ChatMessage[]>(KEYS.messages, []), next];
-      write(KEYS.messages, all);
-      return next;
-    },
-
-    login(email: string, password: string): { success: boolean; error?: string } {
-      const users = read<{ email: string; password: string; user: User }[]>(KEYS.users, []);
-      const found = users.find((u) => u.email === email && u.password === password);
-      if (found) {
-        write(KEYS.user, found.user);
-        return { success: true };
-      }
-      return { success: false, error: "Invalid email or password" };
-    },
-
-    register(name: string, email: string, password: string, refCode?: string): { success: boolean; error?: string } {
-      const users = read<{ email: string; password: string; user: User }[]>(KEYS.users, []);
-      if (users.find((u) => u.email === email)) {
-        return { success: false, error: "Email already exists" };
-      }
-
-      const myCode = uid().slice(0, 6).toUpperCase();
-      let referredBy: string | undefined;
-
-      if (refCode) {
-        const referrer = users.find(u => u.user.referralCode === refCode);
-        if (referrer) {
-          referredBy = referrer.user.id;
-          referrer.user.referralCount = (referrer.user.referralCount || 0) + 1;
-          referrer.user.bonusAliasLinks = (referrer.user.bonusAliasLinks || 0) + 10;
-        }
-      }
-
-      const newUser: User = {
-        id: uid(),
-        email,
-        name,
-        role: email.endsWith("@admin.com") ? "admin" : "user",
-        plan: "free",
-        createdAt: Date.now(),
-        referralCode: myCode,
-        referredBy,
-        referralCount: 0,
-        bonusAliasLinks: 0
-      };
-      write(KEYS.users, [...users, { email, password, user: newUser }]);
-      write(KEYS.user, newUser);
-      return { success: true };
-    },
-
-    logout() {
-      write(KEYS.user, null);
-    },
-
-    addAddress(a: Omit<Address, "id" | "createdAt">): { success: boolean; data?: Address; error?: string } {
-      const all = read<Address[]>(KEYS.addresses, []);
-      const currentUser = read<User | null>(KEYS.user, null);
-      const plan = currentUser?.plan || "free";
-      const limits = PLAN_LIMITS[plan];
+    async addAddress(a: Omit<Address, "id" | "createdAt" | "userId">): Promise<{ success: boolean; data?: Address; error?: string }> {
+      if (!user) return { success: false, error: "Not logged in" };
       
-      const type = a.type; // "personal" | "homeaddress" | "business"
-      const typeKey = type === "homeaddress" ? "home" : type;
-      
-      const count = all.filter(addr => addr.type === type).length;
+      const limits = PLAN_LIMITS[user.plan];
+      const typeKey = a.type === "homeaddress" ? "home" : a.type;
+      const count = addresses.filter(addr => addr.type === a.type).length;
       const limit = (limits as any)[typeKey];
 
       if (count >= limit) {
-        return { success: false, error: `Limit reached: Your plan allows only ${limit} ${type} addresses.` };
+        return { success: false, error: `Limit reached: Your plan allows only ${limit} ${a.type} addresses.` };
       }
 
-      const next: Address = { ...a, id: uid(), createdAt: Date.now() };
-      write(KEYS.addresses, [...all, next]);
-      return { success: true, data: next };
-    },
-    updateAddress(id: string, patch: Partial<Address>) {
-      const all = read<Address[]>(KEYS.addresses, []).map((a) =>
-        a.id === id ? { ...a, ...patch } : a
-      );
-      write(KEYS.addresses, all);
-    },
-    deleteAddress(id: string) {
-      write(
-        KEYS.addresses,
-        read<Address[]>(KEYS.addresses, []).filter((a) => a.id !== id),
-      );
-      // disable any links referencing it
-      const updatedLinks = read<ShareLink[]>(KEYS.links, []).filter(
-        (l) => l.addressId !== id,
-      );
-      write(KEYS.links, updatedLinks);
+      const nextData = { 
+        ...a, 
+        userId: user.id, 
+        createdAt: Date.now() 
+      };
+      const docRef = await addDoc(collection(db, "addresses"), nextData);
+      return { success: true, data: { id: docRef.id, ...nextData } as Address };
     },
 
-    addLink(l: Omit<ShareLink, "id" | "createdAt">): { success: boolean; data?: ShareLink; error?: string } {
-      const all = read<ShareLink[]>(KEYS.links, []);
-      const currentUser = read<User | null>(KEYS.user, null);
-      const plan = currentUser?.plan || "free";
-      const limits = PLAN_LIMITS[plan];
-      const bonus = currentUser?.bonusAliasLinks || 0;
+    async updateAddress(id: string, patch: Partial<Address>) {
+      await updateDoc(doc(db, "addresses", id), patch);
+    },
 
-      const type = l.type; 
+    async deleteAddress(id: string) {
+      await deleteDoc(doc(db, "addresses", id));
+      // Optionally delete associated links
+      const associatedLinks = links.filter(l => l.addressId === id);
+      const batch = writeBatch(db);
+      associatedLinks.forEach(l => {
+        batch.delete(doc(db, "links", l.id));
+      });
+      await batch.commit();
+    },
+
+    async addLink(l: Omit<ShareLink, "id" | "createdAt" | "userId">): Promise<{ success: boolean; data?: ShareLink; error?: string }> {
+      if (!user) return { success: false, error: "Not logged in" };
+
+      const limits = PLAN_LIMITS[user.plan];
+      const bonus = user.bonusAnonymousLinks || 0;
       const lastMonth = Date.now() - 30 * 24 * 3600 * 1000;
 
-      if (type === "anonymous") {
-        const count = all.filter(link => link.type === "anonymous" && link.createdAt > lastMonth).length;
-        if (count >= limits.anonymousLinks) {
-          return { success: false, error: `Limit reached: Your plan allows only ${limits.anonymousLinks} anonymous links per month.` };
-        }
-      } else if (type === "alias") {
-        const count = all.filter(link => link.type === "alias" && link.createdAt > lastMonth).length;
-        const totalLimit = limits.aliasLinks + bonus;
+      if (l.type === "anonymous") {
+        const count = links.filter(link => link.type === "anonymous" && link.createdAt > lastMonth).length;
+        const totalLimit = limits.anonymousLinks + bonus;
         if (count >= totalLimit) {
-          return { success: false, error: `Limit reached: Your plan allows only ${totalLimit} alias links per month.` };
+          return { success: false, error: `Limit reached: Your plan allows only ${totalLimit} anonymous links per month.` };
+        }
+      } else if (l.type === "alias") {
+        const count = links.filter(link => link.type === "alias" && link.createdAt > lastMonth).length;
+        if (count >= limits.aliasLinks) {
+          return { success: false, error: `Limit reached: Your plan allows only ${limits.aliasLinks} alias links per month.` };
         }
       }
 
-      const next: ShareLink = { ...l, id: uid(), createdAt: Date.now() };
-      write(KEYS.links, [...all, next]);
-      return { success: true, data: next };
-    },
-    deleteLink(id: string) {
-      write(
-        KEYS.links,
-        read<ShareLink[]>(KEYS.links, []).filter((l) => l.id !== id),
-      );
+      const nextData = {
+        ...l,
+        userId: user.id,
+        createdAt: Date.now()
+      };
+      const docRef = await addDoc(collection(db, "links"), nextData);
+      return { success: true, data: { id: docRef.id, ...nextData } as ShareLink };
     },
 
-    addSaved(s: Omit<SavedLink, "id" | "receivedAt">) {
-      const next: SavedLink = { ...s, id: uid(), receivedAt: Date.now() };
-      const all = [next, ...read<SavedLink[]>(KEYS.saved, [])];
-      write(KEYS.saved, all);
-      return next;
+    async deleteLink(id: string) {
+      await deleteDoc(doc(db, "links", id));
     },
-    refreshSaved() {
-      // re-evaluate status: anonymous expired -> disabled
-      const all = read<SavedLink[]>(KEYS.saved, []).map((s) => {
-        if (s.type === "anonymous" && s.receivedAt + 24 * 3600 * 1000 < Date.now()) {
-          return { ...s, status: "disabled" as const, disabledReason: "Expired (24h)" };
-        }
-        return s;
-      });
-      write(KEYS.saved, all);
+
+    async addSaved(s: Omit<SavedLink, "id" | "receivedAt">) {
+      if (!user) return;
+      const nextData = { ...s, receivedAt: Date.now() };
+      const docRef = await addDoc(collection(db, "users", user.id, "saved_links"), nextData);
+      return { id: docRef.id, ...nextData };
     },
-    deleteSaved(id: string) {
-      write(
-        KEYS.saved,
-        read<SavedLink[]>(KEYS.saved, []).filter((s) => s.id !== id),
-      );
+
+    async deleteSaved(id: string) {
+      if (!user) return;
+      await deleteDoc(doc(db, "users", user.id, "saved_links", id));
+    },
+
+    // Admin helpers
+    async getAllUsers(): Promise<User[]> {
+      const snap = await getDocs(collection(db, "users"));
+      return snap.docs.map(d => ({ id: d.id, ...d.data() } as User));
+    },
+
+    async getSystemStats() {
+      const usersSnap = await getDocs(collection(db, "users"));
+      const addressesSnap = await getDocs(collection(db, "addresses"));
+      const linksSnap = await getDocs(collection(db, "links"));
+      
+      const users = usersSnap.docs.map(d => d.data() as User);
+
+      return {
+        totalUsers: usersSnap.size,
+        totalAddresses: addressesSnap.size,
+        totalLinks: linksSnap.size,
+        planDistribution: users.reduce((acc, u) => {
+          acc[u.plan] = (acc[u.plan] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>),
+      };
     },
   };
 }
 
 /* ---------- public alias lookup ---------- */
-
-export function findByAlias(alias: string): Address | null {
-  const all = read<Address[]>(KEYS.addresses, []);
-  const a = all.find(
-    (x) => x.isPublic && x.alias && x.alias.toLowerCase() === alias.toLowerCase(),
+export async function findByAlias(alias: string): Promise<Address | null> {
+  const q = query(
+    collection(db, "addresses"), 
+    where("isPublic", "==", true), 
+    where("alias", "==", alias)
   );
-  return a ?? null;
+  const snap = await getDocs(q);
+  if (snap.empty) return null;
+  return { id: snap.docs[0].id, ...snap.docs[0].data() } as Address;
 }
 
-export function searchPublic(query: string): Address[] {
-  const q = query.trim().toLowerCase();
+export async function searchPublic(searchQuery: string): Promise<Address[]> {
+  const q = searchQuery.trim().toLowerCase();
   if (!q) return [];
-  return read<Address[]>(KEYS.addresses, []).filter(
-    (a) =>
-      a.isPublic &&
-      ((a.alias && a.alias.toLowerCase().includes(q)) ||
-        a.label.toLowerCase().includes(q)),
-  );
-}
-
-export function isOnboarded() {
-  return read<boolean>(KEYS.onboarded, false);
-}
-export function setOnboarded(v: boolean) {
-  write(KEYS.onboarded, v);
-}
-
-/* ---------- demo seed for Saved Links ---------- */
-
-function seedSaved(): SavedLink[] {
-  const now = Date.now();
-  return [
-    {
-      id: uid(),
-      url: "pinpoint.app/@ChezMarie",
-      name: "Marie N.",
-      type: "alias",
-      receivedAt: now - 1000 * 3600 * 6,
-      status: "active",
-      addressSnapshot: { lat: 4.0511, lng: 9.7679, label: "Chez Marie, Douala" },
-    },
-    {
-      id: uid(),
-      url: "pinpoint.app/p/3kx91",
-      name: "Anonymous",
-      type: "anonymous",
-      receivedAt: now - 1000 * 3600 * 30,
-      status: "disabled",
-      disabledReason: "Expired (24h)",
-    },
-    {
-      id: uid(),
-      url: "pinpoint.app/m/family",
-      name: "Maman — Bamenda",
-      type: "message",
-      receivedAt: now - 1000 * 3600 * 24 * 8,
-      status: "active",
-      addressSnapshot: { lat: 5.9631, lng: 10.1591, label: "Bamenda — family house" },
-    },
-  ];
+  
+  const snap = await getDocs(query(collection(db, "addresses"), where("isPublic", "==", true)));
+  return snap.docs
+    .map(d => ({ id: d.id, ...d.data() } as Address))
+    .filter(a => 
+      (a.alias && a.alias.toLowerCase().includes(q)) || 
+      a.label.toLowerCase().includes(q)
+    );
 }
