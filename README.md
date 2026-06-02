@@ -1,3 +1,3 @@
-# Welcome to PinPoint
+# Welcome to your Lovable project
 
 TODO: Document your project here
