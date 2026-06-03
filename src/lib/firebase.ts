@@ -12,6 +12,18 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
+// Diagnostic check
+const missingKeys = Object.entries(firebaseConfig)
+  .filter(([key, value]) => !value && key !== 'measurementId')
+  .map(([key]) => key);
+
+if (missingKeys.length > 0) {
+  const errorMsg = `Missing Firebase configuration keys: ${missingKeys.join(", ")}. Check your .env file.`;
+  console.error(errorMsg);
+  // We throw here to be caught by the entry point
+  throw new Error(errorMsg);
+}
+
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);

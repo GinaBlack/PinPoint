@@ -46,7 +46,8 @@ const AuthSync = () => {
   useEffect(() => {
     if (!authLoading && !storeLoading && firebaseUser && !localUser) {
       // Firebase is logged in but Firestore user doc is not yet in state
-      syncUser(firebaseUser.email!, firebaseUser.displayName || undefined);
+      const email = firebaseUser.email || `${firebaseUser.uid}@noemail.com`;
+      syncUser(email, firebaseUser.displayName || undefined);
     }
   }, [firebaseUser, localUser, authLoading, storeLoading, syncUser]);
 

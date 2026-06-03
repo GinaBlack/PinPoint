@@ -166,39 +166,56 @@ export function useStore() {
       }
 
       // Listen to User doc
-      const unsubUser = onSnapshot(doc(db, "users", fbUser.uid), (snap) => {
-        if (snap.exists()) {
-          const userData = snap.data() as User;
-          setUser(userData);
-          setOnboardedState(!!userData.isOnboarded);
-        } else {
-          // If user doc doesn't exist yet, we'll handle it in syncUser or registration
-          setUser(null);
+      const unsubUser = onSnapshot(doc(db, "users", fbUser.uid), 
+        (snap) => {
+          if (snap.exists()) {
+            const userData = snap.data() as User;
+            setUser(userData);
+            setOnboardedState(!!userData.isOnboarded);
+          } else {
+            setUser(null);
+          }
+          setLoading(false);
+        },
+        (err) => {
+          console.error("Error listening to user doc:", err);
+          setLoading(false);
         }
-        setLoading(false);
-      });
+      );
 
       // Listen to Addresses
       const qAddresses = query(collection(db, "addresses"), where("userId", "==", fbUser.uid));
-      const unsubAddresses = onSnapshot(qAddresses, (snap) => {
-        setAddresses(snap.docs.map(d => ({ id: d.id, ...d.data() } as Address)));
-      });
+      const unsubAddresses = onSnapshot(qAddresses, 
+        (snap) => {
+          setAddresses(snap.docs.map(d => ({ id: d.id, ...d.data() } as Address)));
+        },
+        (err) => console.error("Error listening to addresses:", err)
+      );
 
       // Listen to Links
       const qLinks = query(collection(db, "links"), where("userId", "==", fbUser.uid));
-      const unsubLinks = onSnapshot(qLinks, (snap) => {
-        setLinks(snap.docs.map(d => ({ id: d.id, ...d.data() } as ShareLink)));
-      });
+      const unsubLinks = onSnapshot(qLinks, 
+        (snap) => {
+          setLinks(snap.docs.map(d => ({ id: d.id, ...d.data() } as ShareLink)));
+        },
+        (err) => console.error("Error listening to links:", err)
+      );
 
       // Listen to Saved Links
-      const unsubSaved = onSnapshot(collection(db, "users", fbUser.uid, "saved_links"), (snap) => {
-        setSaved(snap.docs.map(d => ({ id: d.id, ...d.data() } as SavedLink)).sort((a,b) => b.receivedAt - a.receivedAt));
-      });
+      const unsubSaved = onSnapshot(collection(db, "users", fbUser.uid, "saved_links"), 
+        (snap) => {
+          setSaved(snap.docs.map(d => ({ id: d.id, ...d.data() } as SavedLink)).sort((a,b) => b.receivedAt - a.receivedAt));
+        },
+        (err) => console.error("Error listening to saved links:", err)
+      );
 
       // Listen to Notifications
-      const unsubNotifs = onSnapshot(collection(db, "users", fbUser.uid, "notifications"), (snap) => {
-        setNotifications(snap.docs.map(d => ({ id: d.id, ...d.data() } as Notification)).sort((a,b) => b.createdAt - a.createdAt));
-      });
+      const unsubNotifs = onSnapshot(collection(db, "users", fbUser.uid, "notifications"), 
+        (snap) => {
+          setNotifications(snap.docs.map(d => ({ id: d.id, ...d.data() } as Notification)).sort((a,b) => b.createdAt - a.createdAt));
+        },
+        (err) => console.error("Error listening to notifications:", err)
+      );
 
       return () => {
         unsubUser();
