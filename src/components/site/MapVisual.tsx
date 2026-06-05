@@ -41,7 +41,7 @@ export function MapVisual() {
         {/* pin */}
         <div className="absolute left-1/2 top-[52%] -translate-x-1/2 -translate-y-full flex flex-col items-center">
           <div className="rounded-full bg-card text-card-foreground px-3 py-1.5 mb-2 text-xs font-medium shadow-elegant border border-border whitespace-nowrap">
-            pinpoint.app/<span className="text-primary font-semibold">@ChezMarie</span>
+            pin-point-zeta.vercel.app/<span className="text-primary font-semibold">@ChezMarie</span>
           </div>
           <div className="relative">
             <span className="absolute inset-0 rounded-full bg-primary/30 animate-ping" />

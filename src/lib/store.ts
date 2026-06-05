@@ -45,7 +45,7 @@ export const PLAN_LIMITS = {
     personal: 1, 
     home: 0, 
     business: 0, 
-    anonymousLinks: 10, 
+    anonymousLinks: Infinity, 
     aliasLinks: 0,
     features: [] as string[]
   },
@@ -53,33 +53,33 @@ export const PLAN_LIMITS = {
     personal: 1, 
     home: 0, 
     business: 0, 
-    anonymousLinks: 15, 
-    aliasLinks: 7,
-    features: [] as string[]
+    anonymousLinks: Infinity, 
+    aliasLinks: Infinity,
+    features: ["alias"]
   },
   pro: { 
-    personal: 2, 
+    personal: 1, 
     home: 1, 
     business: 0, 
     anonymousLinks: Infinity, 
-    aliasLinks: 20,
-    features: ["photos", "notes"]
+    aliasLinks: Infinity,
+    features: ["alias", "photos", "notes"]
   },
   business: { 
-    personal: 2, 
+    personal: 1, 
     home: 1, 
     business: 1, 
     anonymousLinks: Infinity, 
     aliasLinks: Infinity,
-    features: ["photos", "notes", "public_profile"]
+    features: ["alias", "photos", "notes", "qr_download", "public_profile"]
   },
   premium: { 
-    personal: 2, 
+    personal: 1, 
     home: 1, 
-    business: 1, 
+    business: 2, 
     anonymousLinks: Infinity, 
     aliasLinks: Infinity,
-    features: ["photos", "notes", "public_profile", "analytics"]
+    features: ["alias", "photos", "notes", "qr_download", "public_profile", "analytics"]
   },
 };
 
@@ -140,6 +140,35 @@ export type ChatMessage = {
   timestamp: number;
 };
 
+export type DeliveryStatus = "pending" | "in_transit" | "delivered" | "failed";
+
+export type Delivery = {
+  id: string;
+  businessId: string;
+  driverId: string; // The person who clicked the link
+  linkId: string;   // The share link used
+  status: DeliveryStatus;
+  startTime: number;
+  endTime?: number;
+  lat?: number;     // Driver location at completion
+  lng?: number;     // Driver location at completion
+};
+
+export type AnalyticsEvent = {
+  id: string;
+  type: "search" | "click";
+  targetId: string; // addressId or linkId
+  ownerId: string;  // businessId
+  timestamp: number;
+};
+
+/* ---------- Utilities ---------- */
+function clean(obj: any) {
+  const next = { ...obj };
+  Object.keys(next).forEach(key => next[key] === undefined && delete next[key]);
+  return next;
+}
+
 /* ---------- React hook ---------- */
 
 export function useStore() {
@@ -150,9 +179,19 @@ export function useStore() {
   const [onboarded, setOnboardedState] = useState<boolean>(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [deliveries, setDeliveries] = useState<Delivery[]>([]);
+  const [events, setEvents] = useState<AnalyticsEvent[]>([]);
+  const [planLimits, setPlanLimits] = useState<typeof PLAN_LIMITS>(PLAN_LIMITS);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Listen to Plan Limits
+    const unsubLimits = onSnapshot(doc(db, "config", "plan_limits"), (snap) => {
+      if (snap.exists()) {
+        setPlanLimits(snap.data() as typeof PLAN_LIMITS);
+      }
+    });
+
     const unsubAuth = onAuthStateChanged(firebaseAuth, (fbUser) => {
       if (!fbUser) {
         setUser(null);
@@ -160,6 +199,9 @@ export function useStore() {
         setLinks([]);
         setSaved([]);
         setNotifications([]);
+        setMessages([]);
+        setDeliveries([]);
+        setEvents([]);
         setOnboardedState(false);
         setLoading(false);
         return;
@@ -217,16 +259,48 @@ export function useStore() {
         (err) => console.error("Error listening to notifications:", err)
       );
 
+      // Listen to Messages
+      const unsubMessages = onSnapshot(collection(db, "messages"), 
+        (snap) => {
+          setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() } as ChatMessage)).sort((a,b) => a.timestamp - b.timestamp));
+        },
+        (err) => console.error("Error listening to messages:", err)
+      );
+
+      // Listen to Deliveries
+      const qDeliveries = query(collection(db, "deliveries"), where("businessId", "==", fbUser.uid));
+      const unsubDeliveries = onSnapshot(qDeliveries, 
+        (snap) => {
+          setDeliveries(snap.docs.map(d => ({ id: d.id, ...d.data() } as Delivery)));
+        },
+        (err) => console.error("Error listening to deliveries:", err)
+      );
+
+      // Listen to Analytics Events
+      const qEvents = query(collection(db, "analytics_events"), where("ownerId", "==", fbUser.uid));
+      const unsubEvents = onSnapshot(qEvents, 
+        (snap) => {
+          setEvents(snap.docs.map(d => ({ id: d.id, ...d.data() } as AnalyticsEvent)));
+        },
+        (err) => console.error("Error listening to analytics events:", err)
+      );
+
       return () => {
         unsubUser();
         unsubAddresses();
         unsubLinks();
         unsubSaved();
         unsubNotifs();
+        unsubMessages();
+        unsubDeliveries();
+        unsubEvents();
       };
     });
 
-    return () => unsubAuth();
+    return () => {
+      unsubLimits();
+      unsubAuth();
+    };
   }, []);
 
   return {
@@ -237,7 +311,19 @@ export function useStore() {
     onboarded,
     messages,
     notifications,
+    deliveries,
+    events,
+    planLimits,
     loading,
+
+    async recordEvent(type: "search" | "click", targetId: string, ownerId: string) {
+      await addDoc(collection(db, "analytics_events"), {
+        type,
+        targetId,
+        ownerId,
+        timestamp: Date.now()
+      });
+    },
 
     async markNotificationAsRead(id: string) {
       if (!user) return;
@@ -249,9 +335,9 @@ export function useStore() {
       await updateDoc(doc(db, "users", user.id), { plan });
     },
 
-    async updateProfile(patch: Partial<Pick<User, "name" | "bio" | "avatar" | "isOnboarded" | "role">>) {
+    async updateProfile(patch: Partial<Pick<User, "name" | "bio" | "avatar" | "isOnboarded">>) {
       if (!user) return;
-      await updateDoc(doc(db, "users", user.id), patch);
+      await updateDoc(doc(db, "users", user.id), clean(patch));
     },
 
     async addMessage(msg: Omit<ChatMessage, "id" | "timestamp">) {
@@ -276,7 +362,7 @@ export function useStore() {
           id: fbUser.uid,
           email,
           name: name || email.split('@')[0],
-          role: email.endsWith("@admin.com") ? "admin" : "user",
+          role: "user",
           plan: "free",
           createdAt: Date.now(),
           referralCode: Math.random().toString(36).slice(2, 8).toUpperCase(),
@@ -285,16 +371,16 @@ export function useStore() {
           isVerified: true, // If syncing from Firebase, assume verified or handled by Firebase Auth
           isOnboarded: false
         };
-        await setDoc(doc(db, "users", fbUser.uid), newUser);
+        await setDoc(doc(db, "users", fbUser.uid), clean(newUser));
         
         // Seed initial notifications
-        await addDoc(collection(db, "users", fbUser.uid, "notifications"), {
+        await addDoc(collection(db, "users", fbUser.uid, "notifications"), clean({
           title: "Welcome to PinPoint!",
           message: "Thank you for joining our platform. Start by dropping your first pin.",
           type: "success",
           read: false,
           createdAt: Date.now(),
-        });
+        }));
 
         return newUser;
       }
@@ -304,7 +390,7 @@ export function useStore() {
     async addAddress(a: Omit<Address, "id" | "createdAt" | "userId">): Promise<{ success: boolean; data?: Address; error?: string }> {
       if (!user) return { success: false, error: "Not logged in" };
       
-      const limits = PLAN_LIMITS[user.plan];
+      const limits = planLimits[user.plan];
       const typeKey = a.type === "homeaddress" ? "home" : a.type;
       const count = addresses.filter(addr => addr.type === a.type).length;
       const limit = (limits as any)[typeKey];
@@ -318,12 +404,12 @@ export function useStore() {
         userId: user.id, 
         createdAt: Date.now() 
       };
-      const docRef = await addDoc(collection(db, "addresses"), nextData);
+      const docRef = await addDoc(collection(db, "addresses"), clean(nextData));
       return { success: true, data: { id: docRef.id, ...nextData } as Address };
     },
 
     async updateAddress(id: string, patch: Partial<Address>) {
-      await updateDoc(doc(db, "addresses", id), patch);
+      await updateDoc(doc(db, "addresses", id), clean(patch));
     },
 
     async deleteAddress(id: string) {
@@ -340,7 +426,7 @@ export function useStore() {
     async addLink(l: Omit<ShareLink, "id" | "createdAt" | "userId">): Promise<{ success: boolean; data?: ShareLink; error?: string }> {
       if (!user) return { success: false, error: "Not logged in" };
 
-      const limits = PLAN_LIMITS[user.plan];
+      const limits = planLimits[user.plan];
       const bonus = user.bonusAnonymousLinks || 0;
       const lastMonth = Date.now() - 30 * 24 * 3600 * 1000;
 
@@ -362,7 +448,7 @@ export function useStore() {
         userId: user.id,
         createdAt: Date.now()
       };
-      const docRef = await addDoc(collection(db, "links"), nextData);
+      const docRef = await addDoc(collection(db, "links"), clean(nextData));
       return { success: true, data: { id: docRef.id, ...nextData } as ShareLink };
     },
 
@@ -382,13 +468,57 @@ export function useStore() {
       await deleteDoc(doc(db, "users", user.id, "saved_links", id));
     },
 
+    async startDelivery(linkId: string, businessId: string): Promise<string> {
+      const fbUser = firebaseAuth.currentUser;
+      const nextData = {
+        businessId,
+        linkId,
+        driverId: fbUser?.uid || "anonymous_driver",
+        status: "in_transit" as DeliveryStatus,
+        startTime: Date.now(),
+        createdAt: serverTimestamp()
+      };
+      const docRef = await addDoc(collection(db, "deliveries"), nextData);
+      return docRef.id;
+    },
+
+    async updateDeliveryStatus(id: string, status: DeliveryStatus, location?: { lat: number; lng: number }) {
+      const patch: any = { status };
+      if (status === "delivered" || status === "failed") {
+        patch.endTime = Date.now();
+        if (location) {
+          patch.lat = location.lat;
+          patch.lng = location.lng;
+        }
+      }
+      await updateDoc(doc(db, "deliveries", id), patch);
+    },
+
+    async getBusinessDeliveries(businessId: string): Promise<Delivery[]> {
+      const q = query(collection(db, "deliveries"), where("businessId", "==", businessId));
+      const snap = await getDocs(q);
+      return snap.docs.map(d => ({ id: d.id, ...d.data() } as Delivery));
+    },
+
+    async updatePlanLimits(newLimits: typeof PLAN_LIMITS) {
+      if (user?.role !== "admin") throw new Error("Unauthorized");
+      await setDoc(doc(db, "config", "plan_limits"), newLimits);
+    },
+
+    async adminUpdateUser(userId: string, patch: Partial<User>) {
+      if (user?.role !== "admin") throw new Error("Unauthorized");
+      await updateDoc(doc(db, "users", userId), clean(patch));
+    },
+
     // Admin helpers
     async getAllUsers(): Promise<User[]> {
+      if (user?.role !== "admin") throw new Error("Unauthorized");
       const snap = await getDocs(collection(db, "users"));
       return snap.docs.map(d => ({ id: d.id, ...d.data() } as User));
     },
 
     async getSystemStats() {
+      if (user?.role !== "admin") throw new Error("Unauthorized");
       const usersSnap = await getDocs(collection(db, "users"));
       const addressesSnap = await getDocs(collection(db, "addresses"));
       const linksSnap = await getDocs(collection(db, "links"));

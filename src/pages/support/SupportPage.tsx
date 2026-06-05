@@ -114,7 +114,7 @@ export default function SupportPage() {
               <Clock className="w-6 h-6 text-secondary-foreground mb-4" />
               <h3 className="font-bold">{t("Email Support", "Email")}</h3>
               <p className="text-xs text-muted-foreground mt-1 mb-4">{t("Average response time: 2 hours.", "Délai de réponse moyen : 2 heures.")}</p>
-              <Button variant="link" className="p-0 h-auto text-secondary-foreground text-xs font-bold uppercase tracking-widest">support@pinpoint.app</Button>
+              <Button variant="link" className="p-0 h-auto text-secondary-foreground text-xs font-bold uppercase tracking-widest">support@pin-point-zeta.vercel.app</Button>
             </div>
           </div>
         </div>

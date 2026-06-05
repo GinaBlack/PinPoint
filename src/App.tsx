@@ -11,6 +11,7 @@ import AddressesPage from "./pages/app/AddressesPage";
 import AliasPage from "./pages/public/AliasPage";
 import OverviewPage from "./pages/app/OverviewPage";
 import BusinessPage from "./pages/app/BusinessPage";
+import AnalyticsPage from "./pages/app/AnalyticsPage";
 import SavedLinksPage from "./pages/app/SavedLinksPage";
 import MyLinksPage from "./pages/app/MyLinksPage";
 import MessagesPage from "./pages/app/MessagesPage";
@@ -73,6 +74,7 @@ const AppRoutes = () => (
       <Route path="profile" element={<ProfilePage />} />
       <Route path="saved" element={<SavedLinksPage />} />
       <Route path="business" element={<BusinessPage />} />
+      <Route path="analytics" element={<AnalyticsPage />} />
       <Route path="search" element={<SearchPage />} />
       <Route path="add-address" element={<AddAddressPage />} />
       <Route path="support" element={<SupportPage />} />

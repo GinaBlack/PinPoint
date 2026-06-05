@@ -17,7 +17,7 @@ function Onboarding() {
   const { lang } = useI18n();
   const t = (en: string, fr: string) => (lang === "fr" ? fr : en);
   const navigate = useNavigate();
-  const { user, onboarded, loading, ...store } = useStore();
+  const { user, onboarded, loading, planLimits, ...store } = useStore();
 
   const [step, setStep] = useState<Step>(0);
   const { pos, setPos, request, requested } = useMyLocation();
@@ -40,7 +40,7 @@ function Onboarding() {
   if (!user) return <Navigate to="/auth" replace />;
   if (onboarded) return <Navigate to="/app/overview" replace />;
 
-  const limits = PLAN_LIMITS[user.plan || "free"];
+  const limits = planLimits[user.plan || "free"];
   const hasPhotosNotes = limits.features.includes("photos") || limits.features.includes("notes");
 
   const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>, index: number) => {

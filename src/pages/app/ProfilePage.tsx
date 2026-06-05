@@ -34,6 +34,17 @@ export default function ProfilePage() {
     .join("")
     .toUpperCase();
 
+  const makeMeAdmin = async () => {
+    try {
+      const { doc, updateDoc } = await import("firebase/firestore");
+      const { db } = await import("@/lib/firebase");
+      await updateDoc(doc(db, "users", user.id), { role: "admin" });
+      toast.success(t("You are now an Admin! Refresh the page.", "Vous êtes maintenant Admin ! Actualisez la page."));
+    } catch (err) {
+      toast.error("Failed to promote account");
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-20">
       <header className="flex items-center justify-between">
@@ -204,6 +215,21 @@ export default function ProfilePage() {
             </h3>
             <p className="text-sm text-muted-foreground mb-6">
               {t("Control how your profile appears to others when they open your shared links.", "Contrôlez comment votre profil apparaît aux autres lorsqu'ils ouvrent vos liens partagés.")}
+            </p>
+            <div className="flex items-center justify-between p-4 rounded-2xl bg-muted/50 border border-border/40">
+              <div>
+                <p className="font-medium text-sm">{t("Show profile on share pages", "Afficher le profil sur les pages de partage")}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{t("Allows people to see your name and bio.", "Permet aux gens de voir votre nom et votre biographie.")}</p>
+              </div>
+              <Switch checked={true} />
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+}
+'ils ouvrent vos liens partagés.")}
             </p>
             <div className="flex items-center justify-between p-4 rounded-2xl bg-muted/50 border border-border/40">
               <div>

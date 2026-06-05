@@ -25,6 +25,9 @@ function AliasPage() {
       findByAlias(alias).then((res) => {
         setAddr(res);
         setLoading(false);
+        if (res) {
+          store.recordEvent("click", res.id, res.userId);
+        }
       });
     }
   }, [alias]);
@@ -56,7 +59,7 @@ function AliasPage() {
 
   const save = () => {
     store.addSaved({
-      url: `pinpoint.app/@${addr.alias}`,
+      url: `pin-point-zeta.vercel.app/@${addr.alias}`,
       name: addr.label,
       type: "alias",
       status: "active",
@@ -78,7 +81,7 @@ function AliasPage() {
                 <span className="inline-flex items-center gap-1 text-xs font-medium bg-accent/20 text-accent-foreground px-2 py-0.5 rounded-full"><Building2 className="w-3 h-3" /> {t("Business", "Entreprise")}</span>
               )}
             </h1>
-            <p className="text-sm text-primary">pinpoint.app/@{addr.alias}</p>
+            <p className="text-sm text-primary">pin-point-zeta.vercel.app/@{addr.alias}</p>
           </div>
         </div>
 

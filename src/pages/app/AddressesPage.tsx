@@ -17,12 +17,13 @@ function Addresses() {
   const { lang } = useI18n();
   const t = (en: string, fr: string) => (lang === "fr" ? fr : en);
   const store = useStore();
+  const { planLimits } = store;
   
   const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
   const [linkTargetAddressId, setLinkTargetAddressId] = useState<string | null>(null);
   const [newLinkType, setNewLinkType] = useState<LinkType>("alias");
 
-  const limits = PLAN_LIMITS[store.user?.plan || "free"];
+  const limits = planLimits[store.user?.plan || "free"];
   
   const personalCount = store.addresses.filter(a => a.type === "personal").length;
   const homeCount = store.addresses.filter(a => a.type === "homeaddress").length;
@@ -360,7 +361,7 @@ function AddressCard({ addr, t, onDelete, onUpdate, onGenerateLink, limits }: {
           </div>
 
           {addr.alias && (
-            <p className="text-xs text-primary font-medium mt-2">pinpoint.app/@{addr.alias}</p>
+            <p className="text-xs text-primary font-medium mt-2">pin-point-zeta.vercel.app/@{addr.alias}</p>
           )}
 
           <div className="flex gap-2 mt-4">

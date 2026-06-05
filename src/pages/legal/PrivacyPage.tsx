@@ -48,8 +48,8 @@ export default function PrivacyPage() {
           <section className="space-y-4 text-foreground">
             <h2 className="text-xl font-bold">{t("5. Contact Us", "5. Contactez-nous")}</h2>
             <p className="text-muted-foreground">
-              {t("If you have any questions about this Privacy Policy, please contact us at privacy@pinpoint.app.", 
-                 "Si vous avez des questions sur cette politique de confidentialité, veuillez nous contacter à privacy@pinpoint.app.")}
+              {t("If you have any questions about this Privacy Policy, please contact us at privacy@pin-point-zeta.vercel.app.", 
+                 "Si vous avez des questions sur cette politique de confidentialité, veuillez nous contacter à privacy@pin-point-zeta.vercel.app.")}
             </p>
           </section>
 

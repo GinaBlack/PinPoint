@@ -1,26 +1,28 @@
 import { Link} from "react-router-dom";
 import { useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { Building2, Copy, Download, Globe2, Plus } from "lucide-react";
+import { Building2, Copy, Download, Globe2, Plus, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { useStore, PLAN_LIMITS } from "@/lib/store";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
-import { BarChart3, TrendingUp, Users } from "lucide-react";
+import { BusinessAnalytics } from "@/components/business/BusinessAnalytics";
 
 function BusinessPage() {
   const { lang } = useI18n();
   const t = (en: string, fr: string) => (lang === "fr" ? fr : en);
   const store = useStore();
+  const { planLimits } = store;
 
   const candidates = store.addresses.filter(a => a.type === "business");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = candidates.find((a) => a.id === selectedId) ?? candidates[0];
 
-  const limits = PLAN_LIMITS[store.user?.plan || "free"];
+  const limits = planLimits[store.user?.plan || "free"];
   const hasAnalytics = limits.features.includes("analytics");
+  const canDownloadQR = limits.features.includes("qr_download");
 
   if (!selected) {
     return (
@@ -35,7 +37,7 @@ function BusinessPage() {
     );
   }
 
-  const aliasUrl = selected.alias ? `https://pinpoint.app/@${selected.alias}` : `https://pinpoint.app/p/${selected.id}`;
+  const aliasUrl = selected.alias ? `https://pin-point-zeta.vercel.app/@${selected.alias}` : `https://pin-point-zeta.vercel.app/p/${selected.id}`;
 
   const copy = async () => {
     await navigator.clipboard.writeText(aliasUrl);
@@ -90,9 +92,15 @@ function BusinessPage() {
           <p className="text-sm text-primary font-medium mt-1 break-all">{aliasUrl}</p>
           <div className="mt-5 flex gap-2">
             <Button variant="outline" className="rounded-full" onClick={copy}><Copy className="w-4 h-4 mr-1.5" /> {t("Copy link", "Copier")}</Button>
-            <Button onClick={downloadQR} className="rounded-full bg-gradient-primary text-primary-foreground hover:opacity-90 shadow-pin border-0">
-              <Download className="w-4 h-4 mr-1.5" /> {t("Download QR", "Télécharger")}
-            </Button>
+            {canDownloadQR ? (
+              <Button onClick={downloadQR} className="rounded-full bg-gradient-primary text-primary-foreground hover:opacity-90 shadow-pin border-0">
+                <Download className="w-4 h-4 mr-1.5" /> {t("Download QR", "Télécharger")}
+              </Button>
+            ) : (
+              <Button asChild variant="outline" className="rounded-full border-dashed">
+                <Link to="/app/pricing"><Download className="w-4 h-4 mr-1.5" /> {t("Unlock QR", "Débloquer QR")}</Link>
+              </Button>
+            )}
           </div>
         </div>
 
@@ -118,7 +126,7 @@ function BusinessPage() {
           <div>
             <label className="text-sm font-medium">{t("Public alias", "Alias public")}</label>
             <div className="mt-1.5 flex items-center gap-1 rounded-xl border border-input bg-background px-3 h-11">
-              <span className="text-muted-foreground text-sm">pinpoint.app/@</span>
+              <span className="text-muted-foreground text-sm">pin-point-zeta.vercel.app/@</span>
               <input
                 value={selected.alias ?? ""}
                 onChange={(e) => store.updateAddress(selected.id, { alias: e.target.value.replace(/[^a-zA-Z0-9_-]/g, "") })}
@@ -145,41 +153,19 @@ function BusinessPage() {
       </div>
 
       {hasAnalytics ? (
-        <div className="rounded-3xl border border-border bg-card p-8">
-          <div className="flex items-center justify-between mb-8">
-            <h3 className="font-display text-2xl font-semibold flex items-center gap-2">
-              <BarChart3 className="w-6 h-6 text-primary" />
-              {t("Business Analytics", "Analyses Business")}
-            </h3>
-            <span className="text-xs font-bold uppercase tracking-widest text-primary bg-primary/10 px-3 py-1 rounded-full">{t("Premium Feature", "Option Premium")}</span>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="p-6 rounded-2xl bg-muted/30 border border-border/50">
-              <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                <Users className="w-4 h-4" />
-                <span className="text-xs font-bold uppercase tracking-wider">{t("Unique Visitors", "Visiteurs Uniques")}</span>
-              </div>
-              <p className="text-3xl font-bold">1,284</p>
-              <p className="text-[11px] text-green-500 font-bold mt-1">↑ 12% {t("vs last month", "vs mois dernier")}</p>
+        <div className="rounded-3xl border border-border bg-card p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+              <BarChart3 className="w-6 h-6" />
             </div>
-            <div className="p-6 rounded-2xl bg-muted/30 border border-border/50">
-              <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                <Globe2 className="w-4 h-4" />
-                <span className="text-xs font-bold uppercase tracking-wider">{t("Alias Scans", "Scans d'Alias")}</span>
-              </div>
-              <p className="text-3xl font-bold">856</p>
-              <p className="text-[11px] text-green-500 font-bold mt-1">↑ 8% {t("vs last month", "vs mois dernier")}</p>
-            </div>
-            <div className="p-6 rounded-2xl bg-muted/30 border border-border/50">
-              <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                <TrendingUp className="w-4 h-4" />
-                <span className="text-xs font-bold uppercase tracking-wider">{t("Conversion Rate", "Taux de Conversion")}</span>
-              </div>
-              <p className="text-3xl font-bold">24.2%</p>
-              <p className="text-[11px] text-amber-500 font-bold mt-1">→ {t("stable", "stable")}</p>
+            <div>
+              <h3 className="font-display text-xl font-semibold">{t("Business Intelligence", "Intelligence Business")}</h3>
+              <p className="text-sm text-muted-foreground">{t("Your premium analytics dashboard is ready.", "Votre tableau de bord d'analyses est prêt.")}</p>
             </div>
           </div>
+          <Button asChild className="rounded-full shadow-pin">
+            <Link to="/app/analytics">{t("View Analytics", "Voir les analyses")}</Link>
+          </Button>
         </div>
       ) : (
         <div className="rounded-3xl border border-dashed border-border bg-muted/10 p-12 text-center">
@@ -196,4 +182,4 @@ function BusinessPage() {
     </div>
   );
 }
-export default BusinessPage;
+export default BusinessPage;BusinessPage;

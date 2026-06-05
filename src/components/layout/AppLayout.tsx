@@ -25,17 +25,18 @@ import {
   Info,
   Settings,
   Gift,
-  Loader2
+  Loader2,
+  BarChart3
 } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
-import { useStore } from "@/lib/store";
+import { useStore, PLAN_LIMITS } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 function AppLayout() {
   const navigate = useNavigate();
-  const { user, logout, onboarded, loading } = useStore();
+  const { user, logout, onboarded, loading, planLimits } = useStore();
   const { lang } = useI18n();
   const t = (en: string, fr: string) => (lang === "fr" ? fr : en);
   const { pathname } = useLocation();
@@ -63,6 +64,8 @@ function AppLayout() {
     navigate("/");
   };
 
+  const hasAnalytics = planLimits[user.plan]?.features.includes("analytics");
+
   const menuItems = [
     { to: "/", label: t("Home", "Accueil"), icon: HomeIcon, exact: true }, 
     { to: "/app/overview", label: t("Dashboard", "Tableau de bord"), icon: LayoutDashboard, exact: true }, 
@@ -75,6 +78,7 @@ function AppLayout() {
     { to: "/app/plan", label: t("My Plan", "Mon Forfait"), icon: Shield },
     { to: "/app/saved", label: t("Saved Links", "Liens enregistrés"), icon: Bookmark },
     { to: "/app/business", label: t("Business", "Entreprise"), icon: Building2 },
+    ...(hasAnalytics ? [{ to: "/app/analytics", label: t("Analytics", "Analyses"), icon: BarChart3 }] : []),
     { to: "/app/search", label: t("Public search", "Recherche publique"), icon: Search },
     { to: "/app/referral", label: t("Refer & Earn", "Parrainage"), icon: Gift },
     { to: "/app/support", label: t("Customer Support", "Assistance client"), icon: Headphones },

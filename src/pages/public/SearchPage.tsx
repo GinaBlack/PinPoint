@@ -12,6 +12,8 @@ function SearchPage() {
   const [results, setResults] = useState<Address[]>([]);
   const [searched, setSearched] = useState(false);
 
+  const store = useStore();
+
   const run = async (val: string) => {
     setQ(val);
     if (!val.trim()) {
@@ -22,6 +24,11 @@ function SearchPage() {
     setSearched(true);
     const res = await searchPublic(val);
     setResults(res);
+
+    // Record analytics for each result found
+    res.forEach(a => {
+      store.recordEvent("search", a.id, a.userId);
+    });
   };
 
   return (
@@ -65,7 +72,7 @@ function SearchPage() {
                       {a.label}
                       {a.isBusiness && <Building2 className="w-3.5 h-3.5 text-accent-foreground" />}
                     </p>
-                    <p className="text-xs text-primary truncate">pinpoint.app/@{a.alias}</p>
+                    <p className="text-xs text-primary truncate">pin-point-zeta.vercel.app/@{a.alias}</p>
                   </div>
                 </Link>
               </li>

@@ -56,7 +56,7 @@ export function PinMap({
       }).setView([value.lat, value.lng], zoom);
 
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "© OpenStreetMap",
+        attribution: "© OpenStreetMap · Enhanced by PinPoint Local Contributors",
         maxZoom: 19,
       }).addTo(map);
 

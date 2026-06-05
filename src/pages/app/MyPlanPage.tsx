@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress";
 export default function MyPlanPage() {
   const { lang } = useI18n();
   const t = (en: string, fr: string) => (lang === "fr" ? fr : en);
-  const { user, addresses, links } = useStore();
+  const { user, addresses, links, planLimits } = useStore();
 
   const planInfo = {
     free: {
@@ -38,7 +38,7 @@ export default function MyPlanPage() {
     },
   }[user?.plan || "free"];
 
-  const limits = PLAN_LIMITS[user?.plan || "free"];
+  const limits = planLimits[user?.plan || "free"];
   
   const personalCount = addresses.filter(a => a.type === "personal").length;
   const homeCount = addresses.filter(a => a.type === "homeaddress").length;

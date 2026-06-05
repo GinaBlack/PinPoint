@@ -10,8 +10,9 @@ function MyLinks() {
   const { lang } = useI18n();
   const t = (en: string, fr: string) => (lang === "fr" ? fr : en);
   const store = useStore();
+  const { planLimits } = store;
 
-  const limits = PLAN_LIMITS[store.user?.plan || "free"];
+  const limits = planLimits[store.user?.plan || "free"];
   const lastMonth = Date.now() - 30 * 24 * 3600 * 1000;
   
   const getUsage = (type: LinkType) => {
@@ -33,9 +34,9 @@ function MyLinks() {
   };
 
   const getLinkUrl = (link: any) => {
-    if (link.type === "alias") return `pinpoint.app/@${link.alias}`;
-    if (link.type === "message") return `pinpoint.app/m/${link.id}`;
-    return `pinpoint.app/p/${link.id}`;
+    if (link.type === "alias") return `pin-point-zeta.vercel.app/@${link.alias}`;
+    if (link.type === "message") return `pin-point-zeta.vercel.app/m/${link.id}`;
+    return `pin-point-zeta.vercel.app/p/${link.id}`;
   };
 
   const getIcon = (type: LinkType) => {

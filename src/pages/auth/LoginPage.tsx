@@ -84,7 +84,7 @@ function LoginPage({ onSwitchToRegister }: LoginPageProps) {
                   <FormLabel>Email</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="m.douala@example.com"
+                      placeholder="johndoe@example.com"
                       {...field}
                       disabled={isLoading}
                     />

@@ -57,10 +57,10 @@ export default function PricingPage() {
       price: t("p.business.price") + " XAF",
       description: t("Ideal for small businesses."),
       features: [
-        t("plan.pro.f1"), 
         t("plan.biz.f1"),
         t("plan.biz.f2"),
         t("plan.biz.f3"),
+        t("plan.biz.f4"),
       ],
     },
     {
@@ -69,9 +69,9 @@ export default function PricingPage() {
       price: t("p.premium.price") + " XAF",
       description: t("The ultimate business solution."),
       features: [
-        t("plan.biz.f1"),
         t("plan.premium.f1"),
         t("plan.premium.f2"),
+        t("plan.premium.f3"),
       ],
     },
   ];

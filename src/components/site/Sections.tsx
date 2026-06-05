@@ -138,7 +138,7 @@ export function WhyDifferent() {
     { i: Layers, k: 3 },
     { i: MessageCircle, k: 4 },
     { i: Search, k: 5 },
-    { i: Sun, k: 6 },
+    { i: Globe2, k: 6 },
   ];
   return (
     <section className="mx-auto max-w-7xl px-6 py-24 sm:py-32">
@@ -210,13 +210,14 @@ function PlanCard({ p }: { p: Plan }) {
 export function Pricing() {
   const { t } = useI18n();
 
-  const plans: Plan[] = [
-    { name: t("p.free"), price: "0", cadence: `FCFA${t("pricing.month")}`, features: [t("plan.free.f1"), t("plan.free.f2")] },
-    { name: t("p.plus"), price: "3,000", cadence: `FCFA${t("pricing.month")}`, features: [t("plan.plus.f1"), t("plan.plus.f2"), t("plan.plus.f3")] },
-    { name: t("p.pro"), price: "7,000", cadence: `FCFA${t("pricing.month")}`, features: [t("plan.pro.f1"), t("plan.pro.f2"), t("plan.pro.f3"), t("plan.pro.f4")], popular: true },
-    { name: t("p.business"), price: "15,000", cadence: `FCFA${t("pricing.month")}`, features: [t("plan.biz.f1"), t("plan.biz.f2"), t("plan.biz.f3")] },
-    { name: t("p.premium"), price: "25,000", cadence: `FCFA${t("pricing.month")}`, features: [t("plan.premium.f1"), t("plan.premium.f2")] },
+  const plans = [
+    { name: t("p.free"), price: t("p.free.price"), cadence: `XAF${t("pricing.month")}`, features: [t("plan.free.f1"), t("plan.free.f2")] },
+    { name: t("p.plus"), price: t("p.plus.price"), cadence: `XAF${t("pricing.month")}`, features: [t("plan.plus.f1"), t("plan.plus.f2"), t("plan.plus.f3")] },
+    { name: t("p.pro"), price: t("p.pro.price"), cadence: `XAF${t("pricing.month")}`, features: [t("plan.pro.f1"), t("plan.pro.f2"), t("plan.pro.f3"), t("plan.pro.f4")], popular: true },
+    { name: t("p.business"), price: t("p.business.price"), cadence: `XAF${t("pricing.month")}`, features: [t("plan.biz.f1"), t("plan.biz.f2"), t("plan.biz.f3"), t("plan.biz.f4")] },
+    { name: t("p.premium"), price: t("p.premium.price"), cadence: `XAF${t("pricing.month")}`, features: [t("plan.premium.f1"), t("plan.premium.f2"), t("plan.premium.f3")] },
   ];
+
 
   return (
     <section id="pricing" className="mx-auto max-w-7xl px-6 py-24 sm:py-32">

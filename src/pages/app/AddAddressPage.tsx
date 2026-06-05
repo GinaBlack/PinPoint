@@ -20,7 +20,7 @@ function AddAddressPage() {
   const t = (en: string, fr: string) => (lang === "fr" ? fr : en);
   const navigate = useNavigate();
   const store = useStore();
-  const { user, addresses } = store;
+  const { user, addresses, planLimits } = store;
 
   // State extracted from OnboardingPage Steps 0 & 1
   const { pos, setPos, request, requested } = useMyLocation();
@@ -34,7 +34,7 @@ function AddAddressPage() {
 
   if (!user) return null;
 
-  const limits = PLAN_LIMITS[user.plan || "free"];
+  const limits = planLimits[user.plan || "free"];
   const hasPhotosNotes = limits.features.includes("photos") || limits.features.includes("notes");
 
   // Photo upload handlers
@@ -240,7 +240,7 @@ function AddAddressPage() {
                   </p>
                 ) : (
                   <p className="text-[10px] text-muted-foreground mt-1">
-                    {t("A permanent link like pinpoint.app/@yourname", "Un lien permanent comme pinpoint.app/@votre-nom")}
+                    {t("A permanent link like pin-point-zeta.vercel.app/@yourname", "Un lien permanent comme pin-point-zeta.vercel.app/@votre-nom")}
                   </p>
                 )}
               </div>

@@ -39,17 +39,6 @@ export function ChatView({ onBack, userName = "User", linkId, sender }: ChatView
     });
     
     setInput("");
-
-    // Mock auto-reply if agent sends a message
-    if (sender === "agent") {
-      setTimeout(() => {
-        addMessage({
-          linkId,
-          sender: "user",
-          text: t("Got it, thanks!", "C'est noté, merci !"),
-        });
-      }, 1500);
-    }
   };
 
   return (

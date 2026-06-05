@@ -129,7 +129,7 @@ function RegisterPage({ onSwitchToLogin }: RegisterPageProps) {
                   <FormLabel>Email</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="m.douala@example.com"
+                      placeholder="mariedouala@example.com"
                       {...field}
                       disabled={isLoading}
                     />
