@@ -229,18 +229,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-'ils ouvrent vos liens partagés.")}
-            </p>
-            <div className="flex items-center justify-between p-4 rounded-2xl bg-muted/50 border border-border/40">
-              <div>
-                <p className="font-medium text-sm">{t("Show profile on share pages", "Afficher le profil sur les pages de partage")}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{t("Allows people to see your name and bio.", "Permet aux gens de voir votre nom et votre biographie.")}</p>
-              </div>
-              <Switch checked={true} />
-            </div>
-          </div>
-        </main>
-      </div>
-    </div>
-  );
-}
